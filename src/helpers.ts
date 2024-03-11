@@ -2,8 +2,8 @@ import { ApiResponseMessage } from "./enums"
 import { AkadeniaApiErrorResponse } from "./types"
 
 export function getGenericResponseFromError(error: any): AkadeniaApiErrorResponse {
-  let message = error?.response?.data?.message
   const data = error?.response?.data
+  let message = data?.message
 
   switch (error.response?.status) {
     case 400:

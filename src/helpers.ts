@@ -2,8 +2,8 @@ import { ApiResponseMessage } from "./enums"
 import { GenericErrorResponse } from "./types"
 
 export function getGenericResponseFromError(error: any): GenericErrorResponse {
-  let message = error?.response?.data?.message
   const data = error?.response?.data
+  let message = data?.message
 
   switch (error.response?.status) {
     case 400:

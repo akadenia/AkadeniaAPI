@@ -1,13 +1,14 @@
-import { AxiosResponse } from "axios"
+import { AxiosResponse, AxiosError } from "axios"
 
-export type SuccessResponse = AxiosResponse<any, any> & {
-  success: true
+export type AkadeniaApiSuccessResponse<T = any> = AxiosResponse<T, any> & {
+  success: boolean // due to the retry-logic, we cannot guarantee that a AkadeniaApiSuccessResponse type will always have success to be true
+  message?: string
 }
 
-export type GenericErrorResponse = {
+export type AkadeniaApiErrorResponse = Partial<AxiosError["response"]> & {
   success: false
   message: string
   data?: any
 }
 
-export type Response = SuccessResponse | GenericErrorResponse
+export type AkadeniaResponse<T = any> = AkadeniaApiSuccessResponse<T> | AkadeniaApiErrorResponse

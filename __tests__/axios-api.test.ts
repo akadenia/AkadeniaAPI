@@ -70,17 +70,17 @@ describe("Axios API Client Methods", () => {
 
 describe("Axios API Client Retry Logic", () => {
   it("should be able to retry a request", async () => {
-    nock(FAKE_API_URL).get("/posts/1").times(4).reply(502)
+    // By default, it retries if it is a network error or a 5xx error on an idempotent request (GET, HEAD, OPTIONS, PUT or DELETE).
+    nock(FAKE_API_URL).delete("/posts/1").times(4).reply(500)
 
-    const client = new AxiosApiClient(FAKE_API_URL, undefined, undefined, undefined)
-    const spy = jest.spyOn(console, "log")
+    const spy = jest.fn()
+    const client = new AxiosApiClient(FAKE_API_URL, undefined, undefined, 3, undefined, spy)
 
-    await expect(async () => {
-      await client.get("/posts/1")
-      expect(spy).toHaveBeenCalledWith(1)
-      expect(spy).toHaveBeenCalledWith(2)
-      expect(spy).toHaveBeenCalledWith(3)
-    }).rejects.toThrow(new AxiosError("Request failed with status code 502"))
+    const result = await client.delete("/posts/1")
+
+    expect(spy).toHaveBeenCalledTimes(3)
+    expect(result.success).toBeFalsy()
+    expect(result.message).toBe("Internal Server Error")
   })
 })
 

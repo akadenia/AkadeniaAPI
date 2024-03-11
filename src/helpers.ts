@@ -1,7 +1,7 @@
 import { ApiResponseMessage } from "./enums"
-import { GenericErrorResponse } from "./types"
+import { AkadeniaApiErrorResponse } from "./types"
 
-export function getGenericResponseFromError(error: any): GenericErrorResponse {
+export function getGenericResponseFromError(error: any): AkadeniaApiErrorResponse {
   let message = error?.response?.data?.message
   const data = error?.response?.data
 
@@ -29,6 +29,7 @@ export function getGenericResponseFromError(error: any): GenericErrorResponse {
   }
 
   return {
+    ...error?.response,
     success: false,
     message,
     data,

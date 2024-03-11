@@ -4,7 +4,7 @@ import axiosRetry from "axios-retry"
 import { Headers, IHttpHeaders } from "./headers"
 import { ApiResponseMessage } from "./enums"
 import { getGenericResponseFromError } from "./helpers"
-import { GenericErrorResponse, SuccessResponse } from "./types"
+import { AkadeniaApiSuccessResponse, AkadeniaApiErrorResponse, AkadeniaResponse } from "./types"
 
 class AxiosHeaders implements IHttpHeaders {
   headers: Headers = {}
@@ -57,11 +57,15 @@ class AxiosApiClient {
     return this.instance
   }
 
-  private successResponseHandler(response: AxiosResponse<any, any>): SuccessResponse {
-    return { ...response, success: true }
+  private successResponseHandler(response: AxiosResponse): AkadeniaApiSuccessResponse {
+    let success = true
+    if ("success" in response && !response.success) {
+      success = response.success as boolean
+    }
+    return { ...response, success }
   }
 
-  private errorResponseHandler(error: any): GenericErrorResponse {
+  private errorResponseHandler(error: any): AkadeniaApiErrorResponse {
     if (error.response) {
       //  The request was made and the server responded with a status code that falls out of the range of 2xx
       return getGenericResponseFromError(error)
@@ -83,27 +87,27 @@ class AxiosApiClient {
     this.headers.set(name, value)
   }
 
-  async get<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  async get<T>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaResponse<T>> {
     config = this.setConfigRequestHeaders(config)
     return this.instance.get(url, config)
   }
 
-  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AkadeniaResponse<T>> {
     config = this.setConfigRequestHeaders(config)
     return this.instance.post(url, data, config)
   }
 
-  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AkadeniaResponse<T>> {
     config = this.setConfigRequestHeaders(config)
     return this.instance.put(url, data, config)
   }
 
-  async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AkadeniaResponse<T>> {
     config = this.setConfigRequestHeaders(config)
     return await this.instance.patch(url, data, config)
   }
 
-  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaResponse<T>> {
     config = this.setConfigRequestHeaders(config)
     return this.instance.delete(url, config)
   }

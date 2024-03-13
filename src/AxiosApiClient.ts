@@ -71,7 +71,7 @@ class AxiosApiClient {
       return getGenericResponseFromError(error)
     } else if (error.request) {
       // The request was made but no response was received, mostly due to network errors
-      return { success: false, message: ApiResponseMessage.NetworkError }
+      return { success: false, message: error.message || ApiResponseMessage.NetworkError }
     } else {
       // Something happened in setting up the request, probably axios was not properly configured
       return { success: false, message: ApiResponseMessage.UnknownError }

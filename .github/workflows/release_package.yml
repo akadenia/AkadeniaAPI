@@ -25,6 +25,6 @@ jobs:
           node-version-file: ".nvmrc"
           registry-url: "https://npm.pkg.github.com"
           # Defaults to the user or organization that owns the workflow file
-          scope: "@akadenia"
+          scope: "@chlela"
       - run: npm ci
       - run: npm publish

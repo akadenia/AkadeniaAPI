@@ -1,5 +1,5 @@
 {
-  "name": "@akadenia/api",
+  "name": "@chlela/api",
   "version": "1.0.0",
   "description": "Akadenia library: API",
   "main": "dist/index.js",
@@ -17,7 +17,7 @@
     "lint": "prettier --check \"./**/*.{ts,tsx,js,jsx,json,yml}\"",
     "prepare": "npm run build",
     "version": "git add -A src",
-    "updateLink": "npm run build && npm rm @akadenia/api -g && npm link"
+    "updateLink": "npm run build && npm rm @chlela/api -g && npm link"
   },
   "files": [
     "dist"

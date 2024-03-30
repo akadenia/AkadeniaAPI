@@ -1,11 +1,9 @@
 name: Release Package
 
 on:
-  workflow_dispatch:
-
-env:
-  CI: true
-  NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+ release:
+    types: [published]
+ workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,12 +17,16 @@ jobs:
       packages: write
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+        with:
+          clean: true
+      - uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
-          registry-url: "https://npm.pkg.github.com"
-          # Defaults to the user or organization that owns the workflow file
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org/"
           scope: "@akadenia"
       - run: npm ci
       - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

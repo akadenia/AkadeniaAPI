@@ -27,13 +27,13 @@
     "url": "git+https://github.com/akadenia/AkadeniaApi.git"
   },
   "author": "Akadenia",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/akadenia/AkadeniaApi/issues"
   },
   "homepage": "https://github.com/akadenia/AkadeniaApi#readme",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
     "axios": "^1.2.5",

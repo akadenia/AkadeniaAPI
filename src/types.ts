@@ -9,6 +9,7 @@ export type AkadeniaApiErrorResponse = Partial<AxiosError["response"]> & {
   success: false
   message: string
   data?: any
+  error: any
 }
 
-export type AkadeniaResponse<T = any> = AkadeniaApiSuccessResponse<T> | AkadeniaApiErrorResponse
+export type AkadeniaApiResponse<T = any> = AkadeniaApiSuccessResponse<T> | AkadeniaApiErrorResponse

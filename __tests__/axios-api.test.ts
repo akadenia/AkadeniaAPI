@@ -1,5 +1,4 @@
 import { AxiosApiClient } from "../src"
-import { AxiosError } from "axios"
 import { describe, it, expect, jest } from "@jest/globals"
 import nock from "nock"
 

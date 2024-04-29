@@ -38,7 +38,7 @@ if (response.success) {
     console.log(response.data.firstname)
     console.log(response.data.lastname)
 } else {
-    console.log(error)
+    console.log(response.error)
 }
 ```
 
@@ -53,7 +53,7 @@ const response = await client.post("/users", payload)
 if (response.success) {
     console.log(response.data)
 } else {
-    console.log(error)
+    console.log(response.error)
 }
 
 console.log(response.message)
@@ -70,7 +70,7 @@ const response = await client.put("/users/1", payload)
 if (response.success) {
     console.log(response.data)
 } else {
-    console.log(error)
+    console.log(response.error)
 }
 
 console.log(response.message)
@@ -84,7 +84,7 @@ const response = await client.delete("/users/1")
 if (response.success) {
     console.log(response.message)
 } else {
-    console.log(error)
+    console.log(response.error)
 }
 ```
 

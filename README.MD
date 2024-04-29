@@ -97,3 +97,7 @@ if (response.success) {
     error: any
   }
 ```
+
+## License
+
+[MIT](LICENSE)

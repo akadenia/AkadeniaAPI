@@ -76,6 +76,18 @@ if (response.success) {
 console.log(response.message)
 ```
 
+### Making a DELETE request
+
+```js
+const response = await client.delete("/users/1")
+
+if (response.success) {
+    console.log(response.message)
+} else {
+    console.log(error)
+}
+```
+
 ### Default response structure
 ```js 
    {

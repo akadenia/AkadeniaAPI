@@ -2,6 +2,11 @@
 
 An opinionated wrapper around axios library
 
+## License
+
+[MIT](LICENSE)
+
+
 ## Installation
 
 ```sh
@@ -103,7 +108,3 @@ if (response.success) {
     error: any
   }
 ```
-
-## License
-
-[MIT](LICENSE)

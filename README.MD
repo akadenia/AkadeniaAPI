@@ -27,7 +27,7 @@ const client = new AxiosApiClient('https://baseurl', headers)
 ### Making a GET request
 
 ```js
-interface User {
+type User = {
     id: number
     firstname: string
     lastname: string
@@ -45,11 +45,17 @@ if (response.success) {
 ### Making a POST request
 
 ```js
+type User = {
+    id: number
+    firstname: string
+    lastname: string
+}
+
 const payload = {
     firstname: "John",
     lastname: "Doe"
 }
-const response = await client.post("/users", payload)
+const response = await client.post<User>("/users", payload)
 if (response.success) {
     console.log(response.data)
 } else {

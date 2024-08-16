@@ -6,7 +6,7 @@ const FAKE_API_URL = "https://jsonplaceholder.typicode.com"
 
 describe("Axios API Client Methods", () => {
   it("should be able to execute a GET request to a server", async () => {
-    const client = new AxiosApiClient(FAKE_API_URL)
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
     const result = await client.get("/posts/1")
     expect(result.status).toBe(200)
     expect(result.data).toBeDefined()
@@ -17,7 +17,7 @@ describe("Axios API Client Methods", () => {
   })
 
   it("should be able to execute a POST request to a server", async () => {
-    const client = new AxiosApiClient(FAKE_API_URL)
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
     const result = await client.post("/posts", {
       title: "foo",
       body: "bar",
@@ -32,7 +32,7 @@ describe("Axios API Client Methods", () => {
   })
 
   it("should be able to execute a PUT request to a server", async () => {
-    const client = new AxiosApiClient(FAKE_API_URL)
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
     const result = await client.put("/posts/1", {
       id: 1,
       title: "foo",
@@ -48,7 +48,7 @@ describe("Axios API Client Methods", () => {
   })
 
   it("should be able to execute a PATCH request to a server", async () => {
-    const client = new AxiosApiClient(FAKE_API_URL)
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
     const result = await client.patch("/posts/1", {
       title: "foo",
     })
@@ -61,7 +61,7 @@ describe("Axios API Client Methods", () => {
   })
 
   it("should be able to execute a DELETE request to a server", async () => {
-    const client = new AxiosApiClient(FAKE_API_URL)
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
     const result = await client.delete("/posts/1")
     expect(result.status).toBe(200)
   })
@@ -73,7 +73,7 @@ describe("Axios API Client Retry Logic", () => {
     nock(FAKE_API_URL).delete("/posts/1").times(4).reply(500)
 
     const spy = jest.fn()
-    const client = new AxiosApiClient(FAKE_API_URL, undefined, undefined, 3, undefined, spy)
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, retries: 3, onRetry: spy })
 
     const result = await client.delete("/posts/1")
 
@@ -85,9 +85,12 @@ describe("Axios API Client Retry Logic", () => {
 
 describe("Axios API Client Headers Interface", () => {
   it("should set headers correctly when initialized with axios instance", async () => {
-    const client = new AxiosApiClient(FAKE_API_URL, {
-      "Content-Type": "application/json",
-      Authorization: "Bearer token",
+    const client = new AxiosApiClient({
+      baseUrl: FAKE_API_URL,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer token",
+      },
     })
 
     nock(FAKE_API_URL, {
@@ -106,7 +109,7 @@ describe("Axios API Client Headers Interface", () => {
   })
 
   it("should set headers correctly when configured at request level", async () => {
-    const client = new AxiosApiClient(FAKE_API_URL)
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
 
     nock(FAKE_API_URL, {
       reqheaders: {
@@ -129,7 +132,7 @@ describe("Axios API Client Headers Interface", () => {
   })
 
   it("setHeader method should set headers on axios instance", async () => {
-    const client = new AxiosApiClient(FAKE_API_URL)
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
 
     nock(FAKE_API_URL, {
       reqheaders: {
@@ -150,9 +153,12 @@ describe("Axios API Client Headers Interface", () => {
   })
 
   it("setHeader method should override default headers set", async () => {
-    const client = new AxiosApiClient(FAKE_API_URL, {
-      "Content-Type": "application/json",
-      Authorization: "Bearer token",
+    const client = new AxiosApiClient({
+      baseUrl: FAKE_API_URL,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer token",
+      },
     })
 
     nock(FAKE_API_URL, {
@@ -173,8 +179,11 @@ describe("Axios API Client Headers Interface", () => {
   })
 
   it("request level headers should override default headers set", async () => {
-    const client = new AxiosApiClient(FAKE_API_URL, {
-      "Content-Type": "application/json",
+    const client = new AxiosApiClient({
+      baseUrl: FAKE_API_URL,
+      headers: {
+        "Content-Type": "application/json",
+      },
     })
 
     nock(FAKE_API_URL, {

@@ -6,7 +6,6 @@ An opinionated wrapper around axios library
 
 [MIT](LICENSE)
 
-
 ## Installation
 
 ```sh
@@ -16,6 +15,7 @@ npm install @akadenia/api
 ## Usage
 
 ### Importing the Axios Client
+
 ```js
 import { AxiosApiClient } from '@akadenia/api'
 ```
@@ -26,7 +26,10 @@ import { AxiosApiClient } from '@akadenia/api'
 const headers = {
     "Content-Type": "application/json"
 }
-const client = new AxiosApiClient('https://baseurl', headers)
+const client = new AxiosApiClient({
+    baseUrl: 'https://baseurl',
+    headers
+})
 ```
 
 ### Making a GET request
@@ -34,14 +37,14 @@ const client = new AxiosApiClient('https://baseurl', headers)
 ```js
 type User = {
     id: number
-    firstname: string
-    lastname: string
+    firstName: string
+    lastName: string
 }
 
 const response = await client.get<User>("/users/1")
 if (response.success) {
-    console.log(response.data.firstname)
-    console.log(response.data.lastname)
+    console.log(response.data.firstName)
+    console.log(response.data.lastName)
 } else {
     console.log(response.error)
 }
@@ -52,13 +55,13 @@ if (response.success) {
 ```js
 type User = {
     id: number
-    firstname: string
-    lastname: string
+    firstName: string
+    lastName: string
 }
 
 const payload = {
-    firstname: "John",
-    lastname: "Doe"
+    firstName: "John",
+    lastName: "Doe"
 }
 const response = await client.post<User>("/users", payload)
 if (response.success) {
@@ -74,8 +77,8 @@ console.log(response.message)
 
 ```js
 const payload = {
-    firstname: "Lisa",
-    lastname: "Smith"
+    firstName: "Lisa",
+    lastName: "Smith"
 }
 const response = await client.put("/users/1", payload)
 if (response.success) {
@@ -100,7 +103,8 @@ if (response.success) {
 ```
 
 ### Default response structure
-```js 
+
+```js
    {
     success: false
     message: string
@@ -108,3 +112,17 @@ if (response.success) {
     error: any
   }
 ```
+
+### Configuring Retry Logic
+
+The AxiosApiClient supports configurable retry logic for failed requests based on the [axios-retry](https://github.com/softonic/axios-retry) library. You can customize the retry behavior when instantiating the client:
+
+```js
+const client = new AxiosApiClient({
+    baseUrl: 'https://baseurl',
+    retries: 3, // Number of retries
+    retryDelay: (retryCount) => retryCount * 1000, // Wait 1 second on first retry, 2 seconds on second retry, etc.
+    onRetry: (retryCount, error) => {
+        console.log(`Retry attempt ${retryCount} for error: ${error.message}`);
+    } // Callback function to be called on retry
+});

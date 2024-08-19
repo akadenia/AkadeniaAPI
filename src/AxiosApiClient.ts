@@ -1,45 +1,25 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios"
 
 import axiosRetry from "axios-retry"
-import { Headers, IHttpHeaders } from "./headers"
+import { HeadersType, Headers } from "./headers"
 import { ApiResponseMessage } from "./enums"
 import { getGenericResponseFromError } from "./helpers"
 import { AkadeniaApiSuccessResponse, AkadeniaApiErrorResponse, AkadeniaApiResponse } from "./types"
 
-class AxiosHeaders implements IHttpHeaders {
-  headers: Headers = {}
-
-  constructor(headers?: Headers) {
-    if (headers) {
-      this.headers = headers
-    }
-  }
-
-  set(name: string, value: string): void {
-    this.headers[name] = value
-  }
-
-  get(name: string) {
-    return this.headers[name]
-  }
-
-  append(headers: Headers): void {
-    this.headers = { ...this.headers, ...headers }
-  }
+type AxiosApiClientOpts = {
+  baseUrl: string
+  headers?: HeadersType
+  timeout?: number
+  retries?: number
+  retryDelay?: (retryCount: number) => number
+  onRetry?: (retryCount: number, error: any) => void
 }
 
 class AxiosApiClient {
   private instance: AxiosInstance
-  private headers: AxiosHeaders = new AxiosHeaders()
+  private headers = new Headers()
 
-  constructor(
-    baseUrl: string,
-    headers?: Headers,
-    timeout: number = 30000,
-    retries: number = 3,
-    retryDelay?: (retryCount: number) => number,
-    onRetry?: (retryCount: number, error: any) => void,
-  ) {
+  constructor({ baseUrl, headers, timeout = 30000, retries = 3, retryDelay, onRetry }: AxiosApiClientOpts) {
     this.instance = axios.create({
       baseURL: baseUrl,
       timeout,

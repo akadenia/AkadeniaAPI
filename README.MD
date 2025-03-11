@@ -17,19 +17,19 @@ npm install @akadenia/api
 ### Importing the Axios Client
 
 ```js
-import { AxiosApiClient } from '@akadenia/api'
+import { AxiosApiClient } from "@akadenia/api";
 ```
 
 ### Instantiating the Axios Client
 
 ```js
 const headers = {
-    "Content-Type": "application/json"
-}
+  "Content-Type": "application/json",
+};
 const client = new AxiosApiClient({
-    baseUrl: 'https://baseurl',
-    headers
-})
+  baseUrl: "https://baseurl",
+  headers,
+});
 ```
 
 ### Making a GET request
@@ -77,28 +77,28 @@ console.log(response.message)
 
 ```js
 const payload = {
-    firstName: "Lisa",
-    lastName: "Smith"
-}
-const response = await client.put("/users/1", payload)
+  firstName: "Lisa",
+  lastName: "Smith",
+};
+const response = await client.put("/users/1", payload);
 if (response.success) {
-    console.log(response.data)
+  console.log(response.data);
 } else {
-    console.log(response.error)
+  console.log(response.error);
 }
 
-console.log(response.message)
+console.log(response.message);
 ```
 
 ### Making a DELETE request
 
 ```js
-const response = await client.delete("/users/1")
+const response = await client.delete("/users/1");
 
 if (response.success) {
-    console.log(response.message)
+  console.log(response.message);
 } else {
-    console.log(response.error)
+  console.log(response.error);
 }
 ```
 
@@ -119,10 +119,11 @@ The AxiosApiClient supports configurable retry logic for failed requests based o
 
 ```js
 const client = new AxiosApiClient({
-    baseUrl: 'https://baseurl',
-    retries: 3, // Number of retries
-    retryDelay: (retryCount) => retryCount * 1000, // Wait 1 second on first retry, 2 seconds on second retry, etc.
-    onRetry: (retryCount, error) => {
-        console.log(`Retry attempt ${retryCount} for error: ${error.message}`);
-    } // Callback function to be called on retry
+  baseUrl: "https://baseurl",
+  retries: 3, // Number of retries
+  retryDelay: (retryCount) => retryCount * 1000, // Wait 1 second on first retry, 2 seconds on second retry, etc.
+  onRetry: (retryCount, error) => {
+    console.log(`Retry attempt ${retryCount} for error: ${error.message}`);
+  }, // Callback function to be called on retry
 });
+```

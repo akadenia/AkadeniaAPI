@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="https://cdn.akadenia.com/images/akadenia-webp/logo/horizontal-logo.svg" alt="Akadenia" width="200" style="filter: drop-shadow(0 0 1px rgba(0,0,0,1)) drop-shadow(0 0 1px rgba(255,255,255,1));" />
+  <img src="https://cdn.akadenia.com/images/akadenia-webp/logo/horizontal-logo.svg" alt="Akadenia" width="200" />
   
   ## @akadenia/api
   
-  [![npm version](https://badge.fury.io/js/%40akadenia%2Fapi.svg)](https://badge.fury.io/js/%40akadenia%2Fapi)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
+  <img src="https://cdn.akadenia.com/images/badges/npm-version-api.svg" alt="npm version" />
+  <img src="https://cdn.akadenia.com/images/badges/license-mit.svg" alt="License: MIT" />
+  <img src="https://cdn.akadenia.com/images/badges/typescript.svg" alt="TypeScript" />
   
   An opinionated wrapper around axios library that provides a consistent response structure, built-in retry logic, and simplified error handling for HTTP requests.
   

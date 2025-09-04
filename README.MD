@@ -109,15 +109,21 @@ const pdfResponse = await client.get("/documents/report.pdf", {
 
 #### POST Requests
 
-```js
+```typescript
 // Create a new user
-const newUser = {
+interface CreateUserRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+const newUser: CreateUserRequest = {
   firstName: "John",
   lastName: "Doe",
   email: "john@example.com"
 };
 
-const response = await client.post<User>("/users", newUser);
+const response = await client.post<User, CreateUserRequest>("/users", newUser);
 if (response.success) {
   console.log("User created:", response.data);
 } else {
@@ -1024,25 +1030,25 @@ axiosInstance.interceptors.response.use(
 ### Constructor
 
 ```typescript
-new AxiosApiClient(
+new AxiosApiClient({
   baseUrl: string,
   headers?: Headers,
-  timeout?: number,
-  retries?: number,
+  timeout?: number, // default: 30000
+  retries?: number, // default: 3
   retryDelay?: (retryCount: number) => number,
   onRetry?: (retryCount: number, error: any) => void
-)
+})
 ```
 
 ### Methods
 
 #### HTTP Methods
 
-- `get<T>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>>`
-- `post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>>`
-- `put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>>`
-- `patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>>`
-- `delete<T>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>>`
+- `get<TResponse>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<TResponse>>`
+- `post<TResponse, TBody>(url: string, data?: TBody, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<TResponse>>`
+- `put<TResponse, TBody>(url: string, data?: TBody, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<TResponse>>`
+- `patch<TResponse, TBody>(url: string, data?: TBody, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<TResponse>>`
+- `delete<TResponse>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<TResponse>>`
 
 #### Utility Methods
 

@@ -17,7 +17,7 @@
     "lint": "prettier --check \"./**/*.{ts,tsx,js,jsx,json,yml}\"",
     "prepare": "npm run build",
     "version": "git add -A src",
-    "updateLink": "npm run build && npm rm @chlela/api -g && npm link"
+    "updateLink": "npm run build && npm rm @akadenia/api -g && npm link"
   },
   "files": [
     "dist"

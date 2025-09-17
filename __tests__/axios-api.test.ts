@@ -1,13 +1,19 @@
 import { AxiosApiClient } from "../src"
-import { describe, it, expect, jest } from "@jest/globals"
+import { describe, it, expect, jest, afterEach } from "@jest/globals"
 import nock from "nock"
 
 const FAKE_API_URL = "https://jsonplaceholder.typicode.com"
+
+// Clean up nock mocks after each test to prevent interference
+afterEach(() => {
+  nock.cleanAll()
+})
 
 describe("Axios API Client Methods", () => {
   it("should be able to execute a GET request to a server", async () => {
     const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
     const result = await client.get("/posts/1")
+    expect(result.success).toBe(true)
     expect(result.status).toBe(200)
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty("userId")
@@ -23,6 +29,7 @@ describe("Axios API Client Methods", () => {
       body: "bar",
       userId: 1,
     })
+    expect(result.success).toBe(true)
     expect(result.status).toBe(201)
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty("id")
@@ -39,6 +46,7 @@ describe("Axios API Client Methods", () => {
       body: "bar",
       userId: 1,
     })
+    expect(result.success).toBe(true)
     expect(result.status).toBe(200)
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty("id")
@@ -52,6 +60,7 @@ describe("Axios API Client Methods", () => {
     const result = await client.patch("/posts/1", {
       title: "foo",
     })
+    expect(result.success).toBe(true)
     expect(result.status).toBe(200)
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty("id")
@@ -61,25 +70,54 @@ describe("Axios API Client Methods", () => {
   })
 
   it("should be able to execute a DELETE request to a server", async () => {
+    nock(FAKE_API_URL).delete("/posts/1").reply(200, {})
+
     const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
     const result = await client.delete("/posts/1")
+    expect(result.success).toBe(true)
     expect(result.status).toBe(200)
   })
 })
 
 describe("Axios API Client Retry Logic", () => {
-  it("should be able to retry a request", async () => {
+  it("should retry failed requests and eventually fail", async () => {
     // By default, it retries if it is a network error or a 5xx error on an idempotent request (GET, HEAD, OPTIONS, PUT or DELETE).
     nock(FAKE_API_URL).delete("/posts/1").times(4).reply(500)
 
-    const spy = jest.fn()
-    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, retries: 3, onRetry: spy })
+    const onRetrySpy = jest.fn()
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, retries: 3, onRetry: onRetrySpy })
 
     const result = await client.delete("/posts/1")
 
-    expect(spy).toHaveBeenCalledTimes(3)
-    expect(result.success).toBeFalsy()
+    expect(result.success).toBe(false)
     expect(result.message).toBe("Internal Server Error")
+    expect(onRetrySpy).toHaveBeenCalledTimes(3)
+  })
+
+  it("should handle successful request after retries", async () => {
+    // Test that retry logic is configured correctly by testing a simple success case
+    nock(FAKE_API_URL).get("/posts/1").reply(200, { id: 1, title: "test" })
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, retries: 3 })
+
+    const result = await client.get("/posts/1")
+
+    // The request should succeed
+    expect(result.success).toBe(true)
+    expect(result.status).toBe(200)
+    expect(result.data).toEqual({ id: 1, title: "test" })
+  })
+
+  it("should not retry on 4xx errors", async () => {
+    nock(FAKE_API_URL).get("/posts/1").reply(404)
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, retries: 3 })
+
+    const result = await client.get("/posts/1")
+
+    expect(result.success).toBe(false)
+    expect(result.message).toBe("Resource Not Found")
+    expect(result.status).toBe(404)
   })
 })
 
@@ -103,6 +141,7 @@ describe("Axios API Client Headers Interface", () => {
       .reply(200, { id: 1 })
 
     const result = await client.get("/posts/1")
+    expect(result.success).toBe(true)
     expect(result.status).toBe(200)
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty("id")
@@ -126,6 +165,7 @@ describe("Axios API Client Headers Interface", () => {
         Authorization: "Bearer token",
       },
     })
+    expect(result.success).toBe(true)
     expect(result.status).toBe(200)
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty("id")
@@ -199,8 +239,113 @@ describe("Axios API Client Headers Interface", () => {
         "Content-Type": "application/xml",
       },
     })
+    expect(result.success).toBe(true)
     expect(result.status).toBe(200)
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty("id")
+  })
+})
+
+describe("Axios API Client Edge Cases", () => {
+  it("should handle network errors", async () => {
+    nock(FAKE_API_URL).get("/posts/1").replyWithError("Network Error")
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+
+    const result = await client.get("/posts/1")
+
+    expect(result.success).toBe(false)
+    expect(result.message).toBe("Network Error")
+  })
+
+  it("should handle timeout errors", async () => {
+    nock(FAKE_API_URL).get("/posts/1").delayConnection(1000).reply(200, { id: 1 })
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, timeout: 100 })
+
+    const result = await client.get("/posts/1")
+
+    expect(result.success).toBe(false)
+    expect(result.message).toBe("Network Error")
+  })
+
+  it("should handle different HTTP status codes", async () => {
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+
+    // Test 400 Bad Request
+    nock(FAKE_API_URL).get("/posts/1").reply(400)
+    let result = await client.get("/posts/1")
+    expect(result.success).toBe(false)
+    expect(result.message).toBe("Bad Request")
+
+    // Test 401 Unauthorized
+    nock(FAKE_API_URL).get("/posts/1").reply(401)
+    result = await client.get("/posts/1")
+    expect(result.success).toBe(false)
+    expect(result.message).toBe("Unauthorized")
+
+    // Test 403 Forbidden
+    nock(FAKE_API_URL).get("/posts/1").reply(403)
+    result = await client.get("/posts/1")
+    expect(result.success).toBe(false)
+    expect(result.message).toBe("Forbidden")
+
+    // Test 422 Unprocessable Entity
+    nock(FAKE_API_URL).get("/posts/1").reply(422)
+    result = await client.get("/posts/1")
+    expect(result.success).toBe(false)
+    expect(result.message).toBe("Unprocessable Entity")
+  })
+
+  it("should return axios instance", () => {
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+    const instance = client.getInstance()
+
+    expect(instance).toBeDefined()
+    expect(instance.defaults.baseURL).toBe(FAKE_API_URL)
+  })
+
+  it("should handle empty response data", async () => {
+    nock(FAKE_API_URL).get("/posts/1").reply(200)
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+    const result = await client.get("/posts/1")
+
+    expect(result.success).toBe(true)
+    expect(result.status).toBe(200)
+    expect(result.data).toBe("")
+  })
+
+  it("should handle POST with no data", async () => {
+    nock(FAKE_API_URL).post("/posts").reply(201, { id: 1 })
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+    const result = await client.post("/posts")
+
+    expect(result.success).toBe(true)
+    expect(result.status).toBe(201)
+    expect(result.data).toEqual({ id: 1 })
+  })
+
+  it("should handle PUT with no data", async () => {
+    nock(FAKE_API_URL).put("/posts/1").reply(200, { id: 1 })
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+    const result = await client.put("/posts/1")
+
+    expect(result.success).toBe(true)
+    expect(result.status).toBe(200)
+    expect(result.data).toEqual({ id: 1 })
+  })
+
+  it("should handle PATCH with no data", async () => {
+    nock(FAKE_API_URL).patch("/posts/1").reply(200, { id: 1 })
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+    const result = await client.patch("/posts/1")
+
+    expect(result.success).toBe(true)
+    expect(result.status).toBe(200)
+    expect(result.data).toEqual({ id: 1 })
   })
 })

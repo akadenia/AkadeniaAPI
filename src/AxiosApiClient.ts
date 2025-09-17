@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios"
 
-import axiosRetry from "axios-retry"
+import axiosRetry, { IAxiosRetryConfig } from "axios-retry"
 import { HeadersType, Headers } from "./headers"
 import { ApiResponseMessage } from "./enums"
 import { getGenericResponseFromError } from "./helpers"
@@ -28,7 +28,17 @@ class AxiosApiClient {
     if (headers) {
       this.headers.append(headers)
     }
-    axiosRetry(this.instance, { retries, retryDelay, onRetry })
+    const retryConfig: IAxiosRetryConfig = { retries }
+
+    if (retryDelay) {
+      retryConfig.retryDelay = retryDelay
+    }
+
+    if (onRetry) {
+      retryConfig.onRetry = onRetry
+    }
+
+    axiosRetry(this.instance, retryConfig)
 
     this.instance.interceptors.response.use(this.successResponseHandler, this.errorResponseHandler)
   }

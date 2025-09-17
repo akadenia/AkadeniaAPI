@@ -247,10 +247,10 @@ describe("Axios API Client Headers Interface", () => {
 })
 
 describe("Axios API Client Edge Cases", () => {
-  it("should handle network errors", async () => {
+  it("should handle network errors with retries disabled", async () => {
     nock(FAKE_API_URL).get("/posts/1").replyWithError("Network Error")
 
-    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, retries: 0 })
 
     const result = await client.get("/posts/1")
 
@@ -258,10 +258,32 @@ describe("Axios API Client Edge Cases", () => {
     expect(result.message).toBe("Network Error")
   })
 
-  it("should handle timeout errors", async () => {
-    nock(FAKE_API_URL).get("/posts/1").delayConnection(1000).reply(200, { id: 1 })
+  it("should handle network errors with retries enabled", async () => {
+    nock(FAKE_API_URL).get("/posts/1").replyWithError("Network Error")
 
-    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, timeout: 100 })
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, retries: 3 })
+
+    const result = await client.get("/posts/1")
+
+    expect(result.success).toBe(false)
+    expect(result.message).toBe("Network Error")
+  })
+
+  it("should handle timeout errors with retries disabled", async () => {
+    nock(FAKE_API_URL).get("/posts/1").delay(1000).reply(200, { id: 1 })
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, timeout: 100, retries: 0 })
+
+    const result = await client.get("/posts/1")
+
+    expect(result.success).toBe(false)
+    expect(result.message).toBe("Network Error")
+  })
+
+  it("should handle timeout errors with retries enabled", async () => {
+    nock(FAKE_API_URL).get("/posts/1").delay(1000).reply(200, { id: 1 })
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, timeout: 100, retries: 3 })
 
     const result = await client.get("/posts/1")
 

@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="https://cdn.akadenia.com/images/akadenia-webp/logo/horizontal-logo.svg" alt="Akadenia" width="200" style="filter: drop-shadow(0 0 1px rgba(0,0,0,1)) drop-shadow(0 0 1px rgba(255,255,255,1));" />
+  <img src="https://cdn.akadenia.com/images/akadenia-webp/logo/horizontal-logo.svg" alt="Akadenia" width="200" />
   
-  # @akadenia/api
+  ## @akadenia/api
   
-  [![npm version](https://badge.fury.io/js/%40akadenia%2Fapi.svg)](https://badge.fury.io/js/%40akadenia%2Fapi)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
+  <img src="https://cdn.akadenia.com/images/badges/npm-version-api.svg" alt="npm version" />
+  <img src="https://cdn.akadenia.com/images/badges/license-mit.svg" alt="License: MIT" />
+  <img src="https://cdn.akadenia.com/images/badges/typescript.svg" alt="TypeScript" />
   
   An opinionated wrapper around axios library that provides a consistent response structure, built-in retry logic, and simplified error handling for HTTP requests.
   
@@ -81,7 +81,7 @@ if (response.success) {
 
 ### 1. RESTful API Operations
 
-#### GET Requests
+### GET Requests
 
 ```js
 // Fetch a single user
@@ -107,7 +107,7 @@ const pdfResponse = await client.get("/documents/report.pdf", {
 });
 ```
 
-#### POST Requests
+### POST Requests
 
 ```typescript
 // Create a new user
@@ -140,7 +140,7 @@ const uploadResponse = await client.post("/upload", formData, {
 });
 ```
 
-#### PUT Requests
+### PUT Requests
 
 ```js
 // Update an existing user
@@ -155,7 +155,7 @@ if (response.success) {
 }
 ```
 
-#### PATCH Requests
+### PATCH Requests
 
 ```js
 // Partial update
@@ -169,7 +169,7 @@ if (response.success) {
 }
 ```
 
-#### DELETE Requests
+### DELETE Requests
 
 ```js
 // Delete a user
@@ -188,7 +188,7 @@ const deleteResponse = await client.delete("/users/1", {
 
 ### 2. Authentication Scenarios
 
-#### Bearer Token Authentication
+### Bearer Token Authentication
 
 ```js
 // Initialize with token
@@ -218,7 +218,7 @@ try {
 }
 ```
 
-#### API Key Authentication
+### API Key Authentication
 
 ```js
 const client = new AxiosApiClient({
@@ -233,7 +233,7 @@ const client = new AxiosApiClient({
 client.setHeader("X-API-Key", "new-api-key");
 ```
 
-#### Basic Authentication
+### Basic Authentication
 
 ```js
 const client = new AxiosApiClient({
@@ -925,7 +925,7 @@ class FileUploadService {
 
 ### Common Issues and Solutions
 
-#### 1. Network Errors
+### 1. Network Errors
 
 ```js
 // Problem: Frequent network errors
@@ -937,7 +937,7 @@ const client = new AxiosApiClient({
 });
 ```
 
-#### 2. Authentication Issues
+### 2. Authentication Issues
 
 ```js
 // Problem: Token expiration
@@ -961,7 +961,7 @@ axiosInstance.interceptors.response.use(
 );
 ```
 
-#### 3. Rate Limiting
+### 3. Rate Limiting
 
 ```js
 // Problem: 429 Too Many Requests
@@ -972,7 +972,7 @@ const client = new AxiosApiClient({
 });
 ```
 
-#### 4. Large File Uploads
+### 4. Large File Uploads
 
 ```js
 // Problem: Large files timing out
@@ -1042,7 +1042,7 @@ new AxiosApiClient({
 
 ### Methods
 
-#### HTTP Methods
+### HTTP Methods
 
 - `get<TResponse>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<TResponse>>`
 - `post<TResponse, TBody>(url: string, data?: TBody, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<TResponse>>`
@@ -1050,7 +1050,7 @@ new AxiosApiClient({
 - `patch<TResponse, TBody>(url: string, data?: TBody, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<TResponse>>`
 - `delete<TResponse>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<TResponse>>`
 
-#### Utility Methods
+### Utility Methods
 
 - `setHeader(name: string, value: string): void` - Set a header for all future requests
 - `getInstance(): AxiosInstance` - Get the underlying axios instance
@@ -1110,7 +1110,7 @@ npm test
 
 We follow [Conventional Commits](https://www.conventionalcommits.org/) for our semantic release process. **We prefer commit messages to include a scope in parentheses** for better categorization and changelog generation.
 
-#### Preferred Format
+### Preferred Format
 ```
 type(scope): description
 
@@ -1119,22 +1119,22 @@ type(scope): description
 [optional footer]
 ```
 
-#### Examples
+### Examples
 ```bash
-# ✅ Preferred - with scope
+## ✅ Preferred - with scope
 feat(api): add new retry configuration options
 fix(auth): resolve token refresh issue
 docs(readme): add troubleshooting section
 chore(deps): update axios to latest version
 
-# ❌ Less preferred - without scope
+## ❌ Less preferred - without scope
 feat: add new retry configuration options
 fix: resolve token refresh issue
 docs: add troubleshooting section
 chore: update axios to latest version
 ```
 
-#### Common Scopes
+### Common Scopes
 - `api` - API client functionality
 - `auth` - Authentication and authorization
 - `types` - TypeScript type definitions
@@ -1144,7 +1144,7 @@ chore: update axios to latest version
 - `build` - Build and build tooling
 - `ci` - CI/CD configuration
 
-#### Commit Types
+### Commit Types
 - `feat` - New features
 - `fix` - Bug fixes
 - `docs` - Documentation changes

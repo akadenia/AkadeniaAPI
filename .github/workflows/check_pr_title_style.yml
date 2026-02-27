@@ -11,6 +11,8 @@ jobs:
   check-pr-title-style:
     name: Check pr title style
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
     steps:
       - name: Validate PR title (Conventional Commits)
         env:
@@ -49,8 +51,8 @@ jobs:
             exit 1
           fi
 
-          # Disallow scope "core"
-          SCOPE=$(echo "$PR_TITLE" | sed -E "s/^[a-z]+\(([^)]+)\):.*/\1/")
+          # Disallow scope "core" (trim whitespace before comparing)
+          SCOPE=$(echo "$PR_TITLE" | sed -E "s/^[a-z]+\(([^)]+)\):.*/\1/" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
           if [ "$SCOPE" = "core" ]; then
             echo ""
             echo "❌ The scope \"core\" is not allowed."

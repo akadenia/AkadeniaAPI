@@ -60,6 +60,7 @@ jobs:
                 -d "$PAYLOAD")
               HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
               BODY=$(echo "$RESPONSE" | head -n -1)
+              # 422 means PR already exists (duplicate) — treat as success
               if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "422" ]; then
                 echo "PR creation failed (HTTP $HTTP_CODE): $BODY"
                 exit 1

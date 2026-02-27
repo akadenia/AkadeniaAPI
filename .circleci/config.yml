@@ -83,4 +83,4 @@ workflows:
           context: npm-publish
           filters:
             branches:
-              only: dev
+              only: main

@@ -28,8 +28,8 @@ jobs:
           # Rule: type(scope): subject
           #   - type    : one of the allowed types above
           #   - scope   : required, alphanumeric + hyphens/dots/slashes/spaces/$/*
-          #   - subject : must not start with an uppercase letter
-          PATTERN="^($TYPES)\([-a-zA-Z0-9\$.*/ ]+\): ([^A-Z].*)$"
+          #   - subject : non-empty (any casing allowed)
+          PATTERN="^($TYPES)\([-a-zA-Z0-9\$.*/ ]+\): .+$"
 
           if ! echo "$PR_TITLE" | grep -qE "$PATTERN"; then
             echo ""
@@ -41,13 +41,11 @@ jobs:
             echo "   Allowed types   : build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test"
             echo "   Rules:"
             echo "     - scope is required"
-            echo "     - subject must not start with an uppercase letter"
             echo ""
             echo "   Examples:"
             echo "     ✅  feat(auth): add OAuth2 support"
-            echo "     ✅  fix(api): handle empty response body"
+            echo "     ✅  fix(api): Handle empty response body"
             echo "     ❌  feat: missing scope"
-            echo "     ❌  feat(auth): Uppercase subject"
             exit 1
           fi
 

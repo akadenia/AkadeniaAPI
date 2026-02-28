@@ -1,15 +1,15 @@
 <div align="center">
   <img src="https://cdn.akadenia.com/images/akadenia-webp/logo/horizontal-logo.svg" alt="Akadenia" width="200" />
   
-  ## @akadenia/api
+  <h2><code>@akadenia/api</code></h2>
   
   <img src="https://cdn.akadenia.com/images/badges/npm-version-api.svg" alt="npm version" />
   <img src="https://cdn.akadenia.com/images/badges/license-mit.svg" alt="License: MIT" />
   <img src="https://cdn.akadenia.com/images/badges/typescript.svg" alt="TypeScript" />
   
-  An opinionated wrapper around axios library that provides a consistent response structure, built-in retry logic, and simplified error handling for HTTP requests.
+  An opinionated Axios wrapper that gives every HTTP request a consistent response shape, built-in retry logic, and typed error handling — so you stop writing the same boilerplate across every project.
   
-  [Documentation](https://akadenia.com/packages/akadenia-api) • [GitHub](https://github.com/akadenia/AkadeniaAPI) • [Issues](https://github.com/akadenia/AkadeniaAPI/issues)
+  [Documentation](https://akadenia.com/packages/akadenia-api) · [GitHub](https://github.com/akadenia/AkadeniaAPI) · [Issues](https://github.com/akadenia/AkadeniaAPI/issues)
 </div>
 
 ## Features

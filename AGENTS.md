@@ -34,7 +34,7 @@ Examples:
 
 - **All commits must be signed** — use SSH or GPG signing (`git config commit.gpgsign true`)
 - Use conventional commit messages matching the PR title format
-- **Always start from a freshly synced branch** — run `git fetch origin && git checkout -b your-branch origin/dev` before creating any branch. Never branch from a stale local checkout.
+- **Always start from a freshly synced branch** — run `git fetch origin && git checkout -b your-branch origin/main` before creating any branch. Never branch from a stale local checkout.
 
 ## Pre-Push Checklist — MANDATORY
 

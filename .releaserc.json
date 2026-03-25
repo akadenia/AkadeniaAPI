@@ -9,20 +9,14 @@
       "@semantic-release/exec",
       {
         "prepareCmd": "npm run build",
-        "verifyConditionsCmd": "bash scripts/preflight-release.sh"
+        "verifyConditionsCmd": "bash scripts/preflight-release.sh",
+        "successCmd": "bash scripts/commit-release-assets.sh ${nextRelease.version}"
       }
     ],
     [
       "@semantic-release/npm",
       {
         "npmPublish": true
-      }
-    ],
-    [
-      "@semantic-release/git",
-      {
-        "assets": ["package.json", "package-lock.json", "CHANGELOG.md"],
-        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ],
     "@semantic-release/github"

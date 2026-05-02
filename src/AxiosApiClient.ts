@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios"
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from "axios"
 
 import axiosRetry, { IAxiosRetryConfig } from "axios-retry"
 import { HeadersType, Headers } from "./headers"
@@ -13,13 +13,24 @@ type AxiosApiClientOpts = {
   retries?: number
   retryDelay?: (retryCount: number) => number
   onRetry?: (retryCount: number, error: any) => void
+  onRequest?: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>
+  onRequestError?: (error: any) => any
 }
 
 class AxiosApiClient {
   private instance: AxiosInstance
   private headers = new Headers()
 
-  constructor({ baseUrl, headers, timeout = 30000, retries = 3, retryDelay, onRetry }: AxiosApiClientOpts) {
+  constructor({
+    baseUrl,
+    headers,
+    timeout = 30000,
+    retries = 3,
+    retryDelay,
+    onRetry,
+    onRequest,
+    onRequestError,
+  }: AxiosApiClientOpts) {
     this.instance = axios.create({
       baseURL: baseUrl,
       timeout,
@@ -39,6 +50,17 @@ class AxiosApiClient {
     }
 
     axiosRetry(this.instance, retryConfig)
+
+    if (onRequest || onRequestError) {
+      this.instance.interceptors.request.use(async (config) => {
+        if (!onRequest) return config
+        try {
+          return await onRequest(config)
+        } catch (error) {
+          return onRequestError ? onRequestError(error) : Promise.reject(error)
+        }
+      }, onRequestError)
+    }
 
     this.instance.interceptors.response.use(this.successResponseHandler, this.errorResponseHandler)
   }

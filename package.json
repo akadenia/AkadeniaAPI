@@ -11,7 +11,7 @@
     "akadenia"
   ],
   "engines": {
-    "node": ">=20.x"
+    "node": ">=22.x"
   },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
@@ -40,7 +40,8 @@
   },
   "dependencies": {
     "axios": "1.15.0",
-    "axios-retry": "~4.5.0"
+    "axios-retry": "~4.5.0",
+    "undici": "^8.2.0"
   },
   "overrides": {
     "brace-expansion": "^5.0.5",

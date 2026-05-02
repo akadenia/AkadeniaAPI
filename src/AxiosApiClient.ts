@@ -12,9 +12,9 @@ type AxiosApiClientOpts = {
   timeout?: number
   retries?: number
   retryDelay?: (retryCount: number) => number
-  onRetry?: (retryCount: number, error: any) => void
+  onRetry?: (retryCount: number, error: AxiosError, requestConfig: AxiosRequestConfig) => Promise<void> | void
   onRequest?: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>
-  onRequestError?: (error: any) => any
+  onRequestError?: (error: unknown) => unknown
 }
 
 class AxiosApiClient {
@@ -57,7 +57,10 @@ class AxiosApiClient {
         try {
           return await onRequest(config)
         } catch (error) {
-          return onRequestError ? onRequestError(error) : Promise.reject(error)
+          if (onRequestError) {
+            return onRequestError(error) as Promise<InternalAxiosRequestConfig>
+          }
+          throw error
         }
       }, onRequestError)
     }
@@ -71,23 +74,25 @@ class AxiosApiClient {
 
   private successResponseHandler(response: AxiosResponse): AkadeniaApiSuccessResponse {
     let success = true
-    if ("success" in response && !response.success) {
-      success = response.success as boolean
+    if ("success" in response && response.success === false) {
+      success = false
     }
     return { ...response, success }
   }
 
-  private errorResponseHandler(error: any): AkadeniaApiErrorResponse {
-    if (error.response) {
-      //  The request was made and the server responded with a status code that falls out of the range of 2xx
-      return getGenericResponseFromError(error)
-    } else if (error.request) {
-      // The request was made but no response was received, mostly due to network errors
-      return { success: false, message: ApiResponseMessage.NetworkError, error }
-    } else {
-      // Something happened in setting up the request, probably axios was not properly configured
-      return { success: false, message: ApiResponseMessage.UnknownError, error }
+  private errorResponseHandler(error: unknown): AkadeniaApiErrorResponse {
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        //  The request was made and the server responded with a status code that falls out of the range of 2xx
+        return getGenericResponseFromError(error)
+      }
+      if (error.request) {
+        // The request was made but no response was received, mostly due to network errors
+        return { success: false, message: ApiResponseMessage.NetworkError, error }
+      }
     }
+    // Something happened in setting up the request, probably axios was not properly configured
+    return { success: false, message: ApiResponseMessage.UnknownError, error }
   }
 
   private setConfigRequestHeaders(config?: AxiosRequestConfig) {
@@ -99,24 +104,41 @@ class AxiosApiClient {
     this.headers.set(name, value)
   }
 
+  removeHeader(name: string): void {
+    this.headers.remove(name)
+    const defaults = this.instance.defaults.headers
+    delete defaults.common[name]
+    delete (defaults as Record<string, any>)[name]
+  }
+
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>> {
     config = this.setConfigRequestHeaders(config)
     return this.instance.get(url, config)
   }
 
-  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>> {
+  async head<T>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>> {
+    config = this.setConfigRequestHeaders(config)
+    return this.instance.head(url, config)
+  }
+
+  async options<T>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>> {
+    config = this.setConfigRequestHeaders(config)
+    return this.instance.options(url, config)
+  }
+
+  async post<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<AkadeniaApiResponse<T>> {
     config = this.setConfigRequestHeaders(config)
     return this.instance.post(url, data, config)
   }
 
-  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>> {
+  async put<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<AkadeniaApiResponse<T>> {
     config = this.setConfigRequestHeaders(config)
     return this.instance.put(url, data, config)
   }
 
-  async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>> {
+  async patch<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<AkadeniaApiResponse<T>> {
     config = this.setConfigRequestHeaders(config)
-    return await this.instance.patch(url, data, config)
+    return this.instance.patch(url, data, config)
   }
 
   async delete<T>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>> {

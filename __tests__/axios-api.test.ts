@@ -1,4 +1,5 @@
 import { AxiosApiClient } from "../src"
+import { Headers } from "../src/headers"
 import { describe, it, expect, jest, afterEach } from "@jest/globals"
 import nock from "nock"
 
@@ -76,6 +77,24 @@ describe("Axios API Client Methods", () => {
     const result = await client.delete("/posts/1")
     expect(result.success).toBe(true)
     expect(result.status).toBe(200)
+  })
+
+  it("should be able to execute a HEAD request to a server", async () => {
+    nock(FAKE_API_URL).head("/posts/1").reply(200, "", { "x-custom": "value" })
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+    const result = await client.head("/posts/1")
+    expect(result.success).toBe(true)
+    expect(result.status).toBe(200)
+  })
+
+  it("should be able to execute an OPTIONS request to a server", async () => {
+    nock(FAKE_API_URL).options("/posts/1").reply(204, "", { allow: "GET,POST,OPTIONS" })
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+    const result = await client.options("/posts/1")
+    expect(result.success).toBe(true)
+    expect(result.status).toBe(204)
   })
 })
 
@@ -218,6 +237,29 @@ describe("Axios API Client Headers Interface", () => {
     expect(result.data).toHaveProperty("id")
   })
 
+  it("removeHeader method should remove a previously set header", async () => {
+    const client = new AxiosApiClient({
+      baseUrl: FAKE_API_URL,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer token",
+      },
+    })
+
+    nock(FAKE_API_URL, {
+      badheaders: ["Authorization"],
+    })
+      .get("/posts/1")
+      .reply(200, { id: 1 })
+
+    client.removeHeader("Authorization")
+
+    const result = await client.get("/posts/1")
+    expect(result.status).toBe(200)
+    expect(result.data).toBeDefined()
+    expect(result.data).toHaveProperty("id")
+  })
+
   it("request level headers should override default headers set", async () => {
     const client = new AxiosApiClient({
       baseUrl: FAKE_API_URL,
@@ -243,6 +285,42 @@ describe("Axios API Client Headers Interface", () => {
     expect(result.status).toBe(200)
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty("id")
+  })
+})
+
+describe("Headers class", () => {
+  it("get should return the value previously set", () => {
+    const headers = new Headers()
+    headers.set("Content-Type", "application/json")
+    expect(headers.get("Content-Type")).toBe("application/json")
+  })
+
+  it("get should return number and boolean values without coercion", () => {
+    const headers = new Headers()
+    headers.set("X-Retry", 3)
+    headers.set("X-Enabled", false)
+    expect(headers.get("X-Retry")).toBe(3)
+    expect(headers.get("X-Enabled")).toBe(false)
+  })
+
+  it("get should return undefined for unknown header", () => {
+    const headers = new Headers()
+    expect(headers.get("X-Missing")).toBeUndefined()
+  })
+
+  it("append should merge headers", () => {
+    const headers = new Headers({ "Content-Type": "application/json" })
+    headers.append({ Authorization: "Bearer token" })
+    expect(headers.get("Content-Type")).toBe("application/json")
+    expect(headers.get("Authorization")).toBe("Bearer token")
+  })
+
+  it("append should merge numeric and boolean headers", () => {
+    const headers = new Headers({ "X-Existing": true })
+    headers.append({ "X-Retry": 5, "X-Enabled": false })
+    expect(headers.get("X-Existing")).toBe(true)
+    expect(headers.get("X-Retry")).toBe(5)
+    expect(headers.get("X-Enabled")).toBe(false)
   })
 })
 

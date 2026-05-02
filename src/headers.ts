@@ -9,6 +9,8 @@ interface IHttpHeaders {
 
   get(name: string): void
 
+  remove(name: string): void
+
   append(headers: HeadersType): void
 }
 
@@ -27,6 +29,10 @@ class Headers implements IHttpHeaders {
 
   get(name: string) {
     return this.headers[name]
+  }
+
+  remove(name: string): void {
+    delete this.headers[name]
   }
 
   append(headers: HeadersType): void {

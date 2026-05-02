@@ -7,7 +7,7 @@ interface IHttpHeaders {
 
   set(name: string, value: string): void
 
-  get(name: string): void
+  get(name: string): string | number | boolean | undefined
 
   append(headers: HeadersType): void
 }
@@ -25,7 +25,7 @@ class Headers implements IHttpHeaders {
     this.headers[name] = value
   }
 
-  get(name: string) {
+  get(name: string): string | number | boolean | undefined {
     return this.headers[name]
   }
 

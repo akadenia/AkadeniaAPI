@@ -76,6 +76,8 @@ class UndiciApiClient {
   private timeout: number
   private onRequestHook?: UndiciApiClientOpts["onRequest"]
   private onRequestErrorHook?: UndiciApiClientOpts["onRequestError"]
+  private isClosing = false
+  private pendingRetryTimers = new Set<ReturnType<typeof setTimeout>>()
 
   constructor({
     baseUrl,
@@ -163,7 +165,15 @@ class UndiciApiClient {
           callback(null)
         }
         if (delay > 0) {
-          setTimeout(invokeCallback, delay)
+          const timer = setTimeout(() => {
+            this.pendingRetryTimers.delete(timer)
+            if (this.isClosing) {
+              callback(new Error("Retry cancelled because client is closing"))
+              return
+            }
+            invokeCallback()
+          }, delay)
+          this.pendingRetryTimers.add(timer)
         } else {
           invokeCallback()
         }
@@ -192,6 +202,11 @@ class UndiciApiClient {
   }
 
   async close(): Promise<void> {
+    this.isClosing = true
+    for (const timer of this.pendingRetryTimers) {
+      clearTimeout(timer)
+    }
+    this.pendingRetryTimers.clear()
     await this.pool.close()
   }
 
@@ -286,6 +301,19 @@ class UndiciApiClient {
 
     const { body: serializedBody, headers: finalHeaders } = this.serializeBody(context.body, context.headers)
 
+    const controller = new AbortController()
+    const externalSignal = config?.signal
+    const onExternalAbort = () => controller.abort((externalSignal as AbortSignal).reason)
+    if (externalSignal) {
+      if (externalSignal.aborted) {
+        controller.abort(externalSignal.reason)
+      } else {
+        externalSignal.addEventListener("abort", onExternalAbort, { once: true })
+      }
+    }
+    const timeoutMs = config?.timeout ?? this.timeout
+    const timeoutTimer = setTimeout(() => controller.abort(), timeoutMs)
+
     try {
       const response = await this.dispatcher.request({
         origin: this.baseUrl,
@@ -294,9 +322,7 @@ class UndiciApiClient {
         headers: this.toUndiciHeaders(finalHeaders),
         body: serializedBody,
         query: context.query,
-        headersTimeout: config?.timeout ?? this.timeout,
-        bodyTimeout: config?.timeout ?? this.timeout,
-        signal: config?.signal,
+        signal: controller.signal,
       })
 
       const contentType = this.getContentType(response.headers)
@@ -338,6 +364,11 @@ class UndiciApiClient {
         success: false,
         message: ApiResponseMessage.UnknownError,
         error,
+      }
+    } finally {
+      clearTimeout(timeoutTimer)
+      if (externalSignal) {
+        externalSignal.removeEventListener("abort", onExternalAbort)
       }
     }
   }

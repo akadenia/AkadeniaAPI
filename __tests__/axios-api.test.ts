@@ -324,6 +324,83 @@ describe("Headers class", () => {
   })
 })
 
+describe("Axios API Client Request Interceptors", () => {
+  it("should invoke onRequest before the request is sent", async () => {
+    nock(FAKE_API_URL).get("/posts/1").reply(200, { id: 1 })
+
+    const onRequestSpy = jest.fn((config: any) => config)
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL, onRequest: onRequestSpy })
+
+    const result = await client.get("/posts/1")
+
+    expect(result.success).toBe(true)
+    expect(onRequestSpy).toHaveBeenCalledTimes(1)
+    const passed = onRequestSpy.mock.calls[0][0] as any
+    expect(passed.url).toBe("/posts/1")
+    expect(passed.method).toBe("get")
+  })
+
+  it("should allow onRequest to mutate request config (e.g. add a header)", async () => {
+    nock(FAKE_API_URL, {
+      reqheaders: {
+        "X-Injected": (headerValue) => headerValue === "yes",
+      },
+    })
+      .get("/posts/1")
+      .reply(200, { id: 1 })
+
+    const client = new AxiosApiClient({
+      baseUrl: FAKE_API_URL,
+      onRequest: (config) => {
+        config.headers.set("X-Injected", "yes")
+        return config
+      },
+    })
+
+    const result = await client.get("/posts/1")
+    expect(result.status).toBe(200)
+  })
+
+  it("should invoke onRequestError when an upstream request interceptor rejects", async () => {
+    const onRequestErrorSpy = jest.fn((error: unknown) => Promise.reject(error))
+    const client = new AxiosApiClient({
+      baseUrl: FAKE_API_URL,
+      retries: 0,
+      onRequest: (config) => config,
+      onRequestError: onRequestErrorSpy,
+    })
+
+    // Register a second interceptor that runs *before* our onRequest pair
+    // (axios request interceptors run LIFO), so its rejection bubbles into
+    // our onRequestError handler.
+    client.getInstance().interceptors.request.use(() => {
+      throw new Error("boom")
+    })
+
+    const result = await client.get("/posts/1")
+
+    expect(result.success).toBe(false)
+    expect(onRequestErrorSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it("should invoke onRequestError when onRequest itself throws", async () => {
+    const onRequestErrorSpy = jest.fn((error: unknown) => Promise.reject(error))
+    const client = new AxiosApiClient({
+      baseUrl: FAKE_API_URL,
+      retries: 0,
+      onRequest: () => {
+        throw new Error("onRequest boom")
+      },
+      onRequestError: onRequestErrorSpy,
+    })
+
+    const result = await client.get("/posts/1")
+
+    expect(result.success).toBe(false)
+    expect(onRequestErrorSpy).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe("Axios API Client Edge Cases", () => {
   it("should handle network errors with retries disabled", async () => {
     nock(FAKE_API_URL).get("/posts/1").replyWithError("Network Error")

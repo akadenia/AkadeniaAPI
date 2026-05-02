@@ -1,4 +1,5 @@
 import { AxiosApiClient } from "../src"
+import { Headers } from "../src/headers"
 import { describe, it, expect, jest, afterEach } from "@jest/globals"
 import nock from "nock"
 
@@ -243,6 +244,42 @@ describe("Axios API Client Headers Interface", () => {
     expect(result.status).toBe(200)
     expect(result.data).toBeDefined()
     expect(result.data).toHaveProperty("id")
+  })
+})
+
+describe("Headers class", () => {
+  it("get should return the value previously set", () => {
+    const headers = new Headers()
+    headers.set("Content-Type", "application/json")
+    expect(headers.get("Content-Type")).toBe("application/json")
+  })
+
+  it("get should return number and boolean values without coercion", () => {
+    const headers = new Headers()
+    headers.set("X-Retry", 3)
+    headers.set("X-Enabled", false)
+    expect(headers.get("X-Retry")).toBe(3)
+    expect(headers.get("X-Enabled")).toBe(false)
+  })
+
+  it("get should return undefined for unknown header", () => {
+    const headers = new Headers()
+    expect(headers.get("X-Missing")).toBeUndefined()
+  })
+
+  it("append should merge headers", () => {
+    const headers = new Headers({ "Content-Type": "application/json" })
+    headers.append({ Authorization: "Bearer token" })
+    expect(headers.get("Content-Type")).toBe("application/json")
+    expect(headers.get("Authorization")).toBe("Bearer token")
+  })
+
+  it("append should merge numeric and boolean headers", () => {
+    const headers = new Headers({ "X-Existing": true })
+    headers.append({ "X-Retry": 5, "X-Enabled": false })
+    expect(headers.get("X-Existing")).toBe(true)
+    expect(headers.get("X-Retry")).toBe(5)
+    expect(headers.get("X-Enabled")).toBe(false)
   })
 })
 

@@ -79,9 +79,26 @@ class AxiosApiClient {
     this.headers.set(name, value)
   }
 
+  removeHeader(name: string): void {
+    this.headers.remove(name)
+    const defaults = this.instance.defaults.headers
+    delete defaults.common[name]
+    delete (defaults as Record<string, any>)[name]
+  }
+
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>> {
     config = this.setConfigRequestHeaders(config)
     return this.instance.get(url, config)
+  }
+
+  async head<T>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>> {
+    config = this.setConfigRequestHeaders(config)
+    return this.instance.head(url, config)
+  }
+
+  async options<T>(url: string, config?: AxiosRequestConfig): Promise<AkadeniaApiResponse<T>> {
+    config = this.setConfigRequestHeaders(config)
+    return this.instance.options(url, config)
   }
 
   async post<T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<AkadeniaApiResponse<T>> {

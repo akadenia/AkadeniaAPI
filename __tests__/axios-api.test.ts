@@ -78,6 +78,24 @@ describe("Axios API Client Methods", () => {
     expect(result.success).toBe(true)
     expect(result.status).toBe(200)
   })
+
+  it("should be able to execute a HEAD request to a server", async () => {
+    nock(FAKE_API_URL).head("/posts/1").reply(200, "", { "x-custom": "value" })
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+    const result = await client.head("/posts/1")
+    expect(result.success).toBe(true)
+    expect(result.status).toBe(200)
+  })
+
+  it("should be able to execute an OPTIONS request to a server", async () => {
+    nock(FAKE_API_URL).options("/posts/1").reply(204, "", { allow: "GET,POST,OPTIONS" })
+
+    const client = new AxiosApiClient({ baseUrl: FAKE_API_URL })
+    const result = await client.options("/posts/1")
+    expect(result.success).toBe(true)
+    expect(result.status).toBe(204)
+  })
 })
 
 describe("Axios API Client Retry Logic", () => {
@@ -212,6 +230,29 @@ describe("Axios API Client Headers Interface", () => {
       .reply(200, { id: 1 })
 
     client.setHeader("Content-Type", "application/xml")
+
+    const result = await client.get("/posts/1")
+    expect(result.status).toBe(200)
+    expect(result.data).toBeDefined()
+    expect(result.data).toHaveProperty("id")
+  })
+
+  it("removeHeader method should remove a previously set header", async () => {
+    const client = new AxiosApiClient({
+      baseUrl: FAKE_API_URL,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer token",
+      },
+    })
+
+    nock(FAKE_API_URL, {
+      badheaders: ["Authorization"],
+    })
+      .get("/posts/1")
+      .reply(200, { id: 1 })
+
+    client.removeHeader("Authorization")
 
     const result = await client.get("/posts/1")
     expect(result.status).toBe(200)

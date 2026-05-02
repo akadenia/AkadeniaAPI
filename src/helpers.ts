@@ -1,8 +1,10 @@
+import { AxiosError } from "axios"
+
 import { ApiResponseMessage } from "./enums"
 import { AkadeniaApiErrorResponse } from "./types"
 
-export function getGenericResponseFromError(error: any): AkadeniaApiErrorResponse {
-  const data = error?.response?.data
+export function getGenericResponseFromError(error: AxiosError): AkadeniaApiErrorResponse {
+  const data = error.response?.data as { message?: string } | undefined
   let message = data?.message
 
   switch (error.response?.status) {
@@ -29,9 +31,10 @@ export function getGenericResponseFromError(error: any): AkadeniaApiErrorRespons
   }
 
   return {
-    ...error?.response,
+    ...error.response,
     success: false,
     message,
     data,
+    error,
   }
 }

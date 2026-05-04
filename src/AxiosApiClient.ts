@@ -72,12 +72,12 @@ class AxiosApiClient {
     return this.instance
   }
 
-  private successResponseHandler(response: AxiosResponse): AkadeniaApiSuccessResponse {
+  private successResponseHandler(response: AxiosResponse): AxiosResponse & { success: boolean } {
     let success = true
     if ("success" in response && response.success === false) {
       success = false
     }
-    return { ...response, success }
+    return { ...response, success } as AxiosResponse & { success: boolean }
   }
 
   private errorResponseHandler(error: unknown): AkadeniaApiErrorResponse {

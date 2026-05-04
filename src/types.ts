@@ -1,14 +1,23 @@
 import { AxiosResponse, AxiosError } from "axios"
 
-export type AkadeniaApiSuccessResponse<T = unknown> = AxiosResponse<T> & {
-  success: boolean // due to the retry-logic, we cannot guarantee that a AkadeniaApiSuccessResponse type will always have success to be true
+export type AkadeniaApiSuccessResponse<T = unknown> = {
+  data: T
+  status: number
+  statusText: string
+  headers: any
+  config?: any
+  request?: any
+  success: true
   message?: string
 }
 
-export type AkadeniaApiErrorResponse = Partial<AxiosError["response"]> & {
+export type AkadeniaApiErrorResponse = {
   success: false
-  message: string
+  status?: number
+  statusText?: string
+  headers?: any
   data?: unknown
+  message: string
   error: unknown
 }
 

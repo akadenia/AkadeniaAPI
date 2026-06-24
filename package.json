@@ -32,7 +32,7 @@
   "author": "Akadenia",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/akadenia/AkadeniaApi/issues"
+    "url": "https://github.com/akadenia/AkadeniaAPI/issues"
   },
   "homepage": "https://akadenia.com/packages/akadenia-api",
   "publishConfig": {

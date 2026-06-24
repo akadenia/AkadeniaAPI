@@ -7,7 +7,7 @@
   <img src="https://cdn.akadenia.com/images/badges/license-mit.svg" alt="License: MIT" />
   <img src="https://cdn.akadenia.com/images/badges/typescript.svg" alt="TypeScript" />
   
-  An opinionated Axios wrapper that gives every HTTP request a consistent response shape, built-in retry logic, and typed error handling — so you stop writing the same boilerplate across every project.
+  An opinionated HTTP client library with Axios and Undici adapters that gives every HTTP request a consistent response shape, built-in retry logic, and typed error handling — so you stop writing the same boilerplate across every project.
   
   [Documentation](https://akadenia.com/packages/akadenia-api) · [GitHub](https://github.com/akadenia/AkadeniaAPI) · [Issues](https://github.com/akadenia/AkadeniaAPI/issues)
 </div>
@@ -20,7 +20,7 @@
 - 📝 **TypeScript Support**: Full TypeScript support with generic types
 - 🔧 **Header Management**: Easy header manipulation and management
 - ⏱️ **Timeout Support**: Configurable request timeouts
-- 🎯 **Axios Compatible**: Built on top of axios with full compatibility
+- 🎯 **Multiple Adapters**: Choose between Axios (`AxiosApiClient`) or Undici (`UndiciApiClient`) backends
 - 🔒 **Authentication Support**: Built-in support for various auth methods
 - 📊 **Response Interceptors**: Automatic response processing and error handling
 - 🚦 **Request Interceptors**: Custom request modification capabilities

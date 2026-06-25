@@ -1,6 +1,6 @@
 {
   "name": "@akadenia/api",
-  "version": "1.2.0",
+  "version": "1.6.1",
   "description": "Opinionated HTTP client library with Axios and Undici adapters, consistent response structure, built-in retry logic, and typed error handling for TypeScript applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -6,6 +6,7 @@
   "types": "dist/index.d.ts",
   "keywords": [
     "axios-api",
+    "undici-api",
     "akadenia-api",
     "api",
     "akadenia"

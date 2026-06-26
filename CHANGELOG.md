@@ -1,3 +1,10 @@
+## [1.6.2](https://github.com/akadenia/AkadeniaAPI/compare/1.6.1...1.6.2) (2026-06-26)
+
+
+### Bug Fixes
+
+* switch to pnpm, keep node 22, add node 26 to ci matrix ([#93](https://github.com/akadenia/AkadeniaAPI/issues/93)) ([167a038](https://github.com/akadenia/AkadeniaAPI/commit/167a0382600a8cd984403b49dc265a721aeb337e))
+
 ## [1.6.1](https://github.com/akadenia/AkadeniaAPI/compare/1.6.0...1.6.1) (2026-06-25)
 
 

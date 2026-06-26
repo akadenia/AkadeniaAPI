@@ -1101,9 +1101,9 @@ We welcome contributions! Please feel free to submit a Pull Request.
 ```bash
 git clone https://github.com/akadenia/AkadeniaAPI.git
 cd AkadeniaAPI
-npm install
-npm run build
-npm test
+pnpm install
+pnpm run build
+pnpm test
 ```
 
 ### Commit Message Guidelines

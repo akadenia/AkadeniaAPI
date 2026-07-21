@@ -1,3 +1,10 @@
+## [1.6.4](https://github.com/akadenia/AkadeniaAPI/compare/1.6.3...1.6.4) (2026-07-21)
+
+
+### Bug Fixes
+
+* **ci:** consolidate release PR creation into commit-release-assets.sh ([#100](https://github.com/akadenia/AkadeniaAPI/issues/100)) ([b0becb8](https://github.com/akadenia/AkadeniaAPI/commit/b0becb84f9215f5dbd3af8e0fe4332f041ccda17))
+
 ## [1.6.3](https://github.com/akadenia/AkadeniaAPI/compare/1.6.2...1.6.3) (2026-07-20)
 
 

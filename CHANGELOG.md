@@ -1,3 +1,10 @@
+## [1.6.5](https://github.com/akadenia/AkadeniaAPI/compare/1.6.4...1.6.5) (2026-07-21)
+
+
+### Bug Fixes
+
+* resolve JS-YAML DoS vulnerability in AkadeniaAPI ([#95](https://github.com/akadenia/AkadeniaAPI/issues/95)) ([e08cfe0](https://github.com/akadenia/AkadeniaAPI/commit/e08cfe0b904e97cfa5eec93a2316f0465a2ad485)), closes [#86](https://github.com/akadenia/AkadeniaAPI/issues/86)
+
 ## [1.6.4](https://github.com/akadenia/AkadeniaAPI/compare/1.6.3...1.6.4) (2026-07-21)
 
 

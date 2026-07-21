@@ -1,3 +1,17 @@
+## [1.6.4](https://github.com/akadenia/AkadeniaAPI/compare/1.6.3...1.6.4) (2026-07-21)
+
+
+### Bug Fixes
+
+* **ci:** consolidate release PR creation into commit-release-assets.sh ([#100](https://github.com/akadenia/AkadeniaAPI/issues/100)) ([b0becb8](https://github.com/akadenia/AkadeniaAPI/commit/b0becb84f9215f5dbd3af8e0fe4332f041ccda17))
+
+## [1.6.3](https://github.com/akadenia/AkadeniaAPI/compare/1.6.2...1.6.3) (2026-07-20)
+
+
+### Bug Fixes
+
+* **deps:** resolve js-yaml security vulnerability via pnpm override ([#97](https://github.com/akadenia/AkadeniaAPI/issues/97)) ([89d555f](https://github.com/akadenia/AkadeniaAPI/commit/89d555f3521552f56b2fb6226c699e8b6a20b96e))
+
 ## [1.6.2](https://github.com/akadenia/AkadeniaAPI/compare/1.6.1...1.6.2) (2026-06-26)
 
 

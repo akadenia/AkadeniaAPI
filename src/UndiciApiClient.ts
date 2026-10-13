@@ -1,3 +1,4 @@
+import { stringify } from "node:querystring"
 import { Dispatcher, Pool, RetryAgent, RetryHandler, errors as UndiciErrors } from "undici"
 
 import { HeadersType, Headers } from "./headers"
@@ -5,6 +6,9 @@ import { ApiResponseMessage } from "./enums"
 import { AkadeniaApiSuccessResponse, AkadeniaApiErrorResponse, AkadeniaApiResponse } from "./types"
 
 type UndiciHttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS"
+
+// Error statuses are only retried for these methods, so a POST or PATCH that fails after the server acted on it isn't repeated
+const IDEMPOTENT_METHODS: string[] = ["GET", "HEAD", "OPTIONS", "PUT", "DELETE"]
 
 export type UndiciRequestConfig = {
   headers?: HeadersType
@@ -132,6 +136,10 @@ class UndiciApiClient {
           callback(err)
           return
         }
+        if (statusCode != null && !IDEMPOTENT_METHODS.includes(String(context.opts.method).toUpperCase())) {
+          callback(err)
+          return
+        }
         if (code && code !== "UND_ERR_REQ_RETRY" && retryOptions.errorCodes && !retryOptions.errorCodes.includes(code)) {
           callback(err)
           return
@@ -246,7 +254,7 @@ class UndiciApiClient {
   private async parseResponseBody(body: Dispatcher.ResponseData["body"], contentType: string | undefined): Promise<unknown> {
     const text = await body.text()
     if (text.length === 0) return ""
-    if (contentType && contentType.toLowerCase().includes("application/json")) {
+    if (contentType && /^application\/([\w.-]+\+)?json\b/.test(contentType.toLowerCase())) {
       try {
         return JSON.parse(text)
       } catch {
@@ -260,6 +268,15 @@ class UndiciApiClient {
     const value = headers["content-type"]
     if (Array.isArray(value)) return value[0]
     return value
+  }
+
+  private withQuery(url: string, query?: Record<string, unknown>): { path: string; query?: Record<string, unknown> } {
+    // undici rejects a query option when the path already has one, so merge them into the path instead
+    if (!query || !url.includes("?")) {
+      return { path: url, query }
+    }
+    const extra = stringify(query as Parameters<typeof stringify>[0])
+    return { path: extra ? `${url}&${extra}` : url }
   }
 
   private async runRequest<T>(
@@ -314,15 +331,19 @@ class UndiciApiClient {
     const timeoutMs = config?.timeout ?? this.timeout
     const timeoutTimer = setTimeout(() => controller.abort(), timeoutMs)
 
+    const { path, query } = this.withQuery(context.url, context.query)
+
     try {
       const response = await this.dispatcher.request({
         origin: this.baseUrl,
-        path: context.url,
+        path,
         method: context.method,
         headers: this.toUndiciHeaders(finalHeaders),
         body: serializedBody,
-        query: context.query,
+        query,
         signal: controller.signal,
+        headersTimeout: timeoutMs,
+        bodyTimeout: timeoutMs,
       })
 
       const contentType = this.getContentType(response.headers)
@@ -353,7 +374,7 @@ class UndiciApiClient {
       }
       return successResponse
     } catch (error) {
-      if (isNetworkError(error)) {
+      if (controller.signal.aborted || isNetworkError(error)) {
         return {
           success: false,
           message: ApiResponseMessage.NetworkError,

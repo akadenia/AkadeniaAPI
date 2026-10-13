@@ -41,31 +41,31 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "axios": "1.18.1",
+    "axios": "1.20.0",
     "axios-retry": "~4.5.0",
-    "undici": "^8.5.0"
+    "undici": "^8.11.2"
   },
   "overrides": {
     "brace-expansion": "^5.0.5",
     "picomatch": "^4.0.4"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.1.0",
-    "@commitlint/config-conventional": "^21.1.0",
-    "@jest/globals": "^30.4.1",
-    "@semantic-release/changelog": "^6.0.3",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@jest/globals": "^30.5.2",
+    "@semantic-release/changelog": "^7.0.0",
     "@semantic-release/commit-analyzer": "^13.0.1",
     "@semantic-release/exec": "^7.1.0",
-    "@semantic-release/git": "^10.0.1",
-    "@semantic-release/npm": "^13.1.5",
+    "@semantic-release/git": "^11.0.1",
+    "@semantic-release/npm": "^13.2.0",
     "@semantic-release/release-notes-generator": "^14.1.1",
     "@types/node": "^22.x",
-    "jest": "^30.4.2",
-    "js-yaml": "^5.2.0",
-    "nock": "^14.0.15",
-    "prettier": "^3.8.4",
-    "semantic-release": "^25.0.5",
-    "ts-jest": "^29.4.11",
+    "jest": "^30.5.2",
+    "js-yaml": "^5.4.3",
+    "nock": "^14.0.17",
+    "prettier": "^3.9.10",
+    "semantic-release": "^25.0.9",
+    "ts-jest": "^29.4.14",
     "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@11.9.0"

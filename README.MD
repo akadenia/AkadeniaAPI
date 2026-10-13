@@ -15,7 +15,7 @@
 ## Features
 
 - 🚀 **Consistent Response Format**: All responses follow a standardized structure
-- 🔄 **Built-in Retry Logic**: Configurable retries for server errors, rate limiting and network failures
+- 🔄 **Built-in Retry Logic**: Configurable retries for network failures, server errors and rate limiting
 - 🛡️ **Error Handling**: Requests never throw; failures come back as typed error responses with meaningful messages
 - 📝 **TypeScript Support**: Full TypeScript support with generic types
 - 🔧 **Header Management**: Easy header manipulation and management
@@ -37,10 +37,6 @@
 - [Migrating from AxiosApiClient](#migrating-from-axiosapiclient)
 - [Best Practices](#best-practices)
 - [Contributing](#contributing)
-
-## License
-
-[MIT](LICENSE)
 
 ## Installation
 
@@ -104,6 +100,11 @@ if (userResponse.success) {
 // Fetch with query parameters (arrays become repeated keys: ?tag=a&tag=b)
 const usersResponse = await client.get<User[]>("/users", {
   query: { page: 1, limit: 10 }
+});
+
+// If the path already has a query string, the query option is appended to it
+const searchResponse = await client.get("/search?q=shoes", {
+  query: { page: 2 } // -> /search?q=shoes&page=2
 });
 
 // Fetch with custom headers
@@ -338,7 +339,9 @@ if (response.success) {
 
 ### 6. Retry Logic Configuration
 
-Failed requests are retried when the server responds with `429`, `500`, `502`, `503` or `504`, or on network errors such as `ECONNRESET`, `ECONNREFUSED` and socket or header timeouts. Other status codes are returned immediately.
+Failed requests are retried on network errors such as `ECONNRESET`, `ECONNREFUSED` and socket or header timeouts, for every HTTP method.
+
+Responses with status `429`, `500`, `502`, `503` or `504` are retried only for `GET`, `HEAD`, `OPTIONS`, `PUT` and `DELETE`. `POST` and `PATCH` are not retried on these statuses, because the server may already have acted on the request. Other status codes are returned immediately.
 
 ```ts
 const client = new UndiciApiClient({
@@ -400,7 +403,7 @@ const response = await pending; // { success: false, message: "Network Error", .
 
 ### 9. Response Bodies
 
-Responses with a JSON `Content-Type` are parsed into objects. All other responses, including JSON that fails to parse, are returned as text. Empty bodies become `""`.
+Responses with a JSON `Content-Type`, including `+json` types such as `application/problem+json`, are parsed into objects. All other responses, including JSON that fails to parse, are returned as text. Empty bodies become `""`.
 
 ```ts
 const json = await client.get<User[]>("/users"); // data: User[]
@@ -771,7 +774,7 @@ const client = new UndiciApiClient({
 
 ### 4. Rate Limiting
 
-`429` responses are retried automatically. Add a delay so retries back off:
+`429` responses to `GET`, `HEAD`, `OPTIONS`, `PUT` and `DELETE` requests are retried automatically. Add a delay so retries back off:
 
 ```ts
 const client = new UndiciApiClient({
@@ -895,7 +898,7 @@ type AkadeniaApiResponse<T = unknown> = AkadeniaApiSuccessResponse<T> | Akadenia
 | `AxiosApiClient` | `UndiciApiClient` |
 |---|---|
 | `baseUrl` could include a path | `baseUrl` must be an origin; move the path into each request |
-| `params` request option | `query` request option |
+| `params` request option | `query` request option; if the path already has a query string, `query` is appended to it |
 | Any axios request option | Only `headers`, `query`, `timeout` and `signal` |
 | `responseType` (`blob`, `arraybuffer`, `stream`) | JSON or text only; use `getDispatcher()` for binary or streamed responses |
 | `FormData` bodies | Not serialized; send strings or binary data, or use `getDispatcher()` |
@@ -904,7 +907,7 @@ type AkadeniaApiResponse<T = unknown> = AkadeniaApiSuccessResponse<T> | Akadenia
 | `onRequest(config)` with an axios config | `onRequest(request)` with `url`, `method`, `headers`, `body`, `query` |
 | `onRetry(retryCount, axiosError, axiosConfig)` | `onRetry(retryCount, error, request)` |
 | Success response had `config` and `request` | Success response has `data`, `status`, `statusText`, `headers` |
-| Retried network errors and idempotent requests on `5xx` | Retries `429`, `500`, `502`, `503`, `504` and network errors for all methods |
+| Retried network errors for all methods, and `5xx` for idempotent methods | Same, and also retries `429` for idempotent methods; only `500`, `502`, `503` and `504` count as retryable `5xx` |
 | `AxiosError` type export | Removed |
 | Nothing to clean up | Call `close()` when done |
 

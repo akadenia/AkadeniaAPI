@@ -3,8 +3,6 @@ export type AkadeniaApiSuccessResponse<T = unknown> = {
   status: number
   statusText: string
   headers: any
-  config?: any
-  request?: any
   success: true
   message?: string
 }

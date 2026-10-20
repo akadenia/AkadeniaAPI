@@ -316,8 +316,6 @@ class UndiciApiClient {
       }
     }
 
-    const { body: serializedBody, headers: finalHeaders } = this.serializeBody(context.body, context.headers)
-
     const controller = new AbortController()
     const externalSignal = config?.signal
     const onExternalAbort = () => controller.abort((externalSignal as AbortSignal).reason)
@@ -331,9 +329,13 @@ class UndiciApiClient {
     const timeoutMs = config?.timeout ?? this.timeout
     const timeoutTimer = setTimeout(() => controller.abort(), timeoutMs)
 
-    const { path, query } = this.withQuery(context.url, context.query)
-
     try {
+      // Serialization can throw (a lone surrogate in the query, a BigInt or
+      // circular body), so it runs inside the try: the caller gets the error
+      // response and the timeout and abort listener are always cleaned up.
+      const { body: serializedBody, headers: finalHeaders } = this.serializeBody(context.body, context.headers)
+      const { path, query } = this.withQuery(context.url, context.query)
+
       const response = await this.dispatcher.request({
         origin: this.baseUrl,
         path,

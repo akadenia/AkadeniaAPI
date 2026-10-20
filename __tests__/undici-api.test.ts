@@ -379,6 +379,35 @@ describe("Undici API Client Edge Cases", () => {
     }
   })
 
+  it("should return an error response for a query that can't be serialized, and clean up", async () => {
+    const client = new UndiciApiClient({ baseUrl, retries: 0 })
+    const controller = new AbortController()
+    const add = jest.spyOn(controller.signal, "addEventListener")
+    const remove = jest.spyOn(controller.signal, "removeEventListener")
+    const result = await client.get("/search?fixed=1", { query: { q: "\ud800" }, signal: controller.signal })
+    await client.close()
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.message).toBe("An Unknown Error Occurred")
+      expect((result.error as Error).name).toBe("URIError")
+    }
+    expect(add).toHaveBeenCalledTimes(1)
+    expect(remove).toHaveBeenCalledWith("abort", add.mock.calls[0]![1])
+    expect(requestLog).toHaveLength(0)
+  })
+
+  it("should return an error response for a body that can't be serialized", async () => {
+    const client = new UndiciApiClient({ baseUrl, retries: 0 })
+    const result = await client.post("/posts", { id: BigInt(1) })
+    await client.close()
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.message).toBe("An Unknown Error Occurred")
+      expect((result.error as Error).name).toBe("TypeError")
+    }
+    expect(requestLog).toHaveLength(0)
+  })
+
   it("should handle different HTTP status codes", async () => {
     const client = new UndiciApiClient({ baseUrl, retries: 0 })
 

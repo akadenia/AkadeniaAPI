@@ -379,6 +379,63 @@ describe("Undici API Client Edge Cases", () => {
     }
   })
 
+  it("should return an error response for a query that can't be serialized, and clean up", async () => {
+    const client = new UndiciApiClient({ baseUrl, retries: 0 })
+    const controller = new AbortController()
+    const add = jest.spyOn(controller.signal, "addEventListener")
+    const remove = jest.spyOn(controller.signal, "removeEventListener")
+    const result = await client.get("/search?fixed=1", { query: { q: "\ud800" }, signal: controller.signal })
+    await client.close()
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.message).toBe("An Unknown Error Occurred")
+      expect((result.error as Error).name).toBe("URIError")
+    }
+    expect(add).toHaveBeenCalledTimes(1)
+    expect(remove).toHaveBeenCalledWith("abort", add.mock.calls[0]![1])
+    expect(requestLog).toHaveLength(0)
+  })
+
+  it("should not report a serialization failure as a network error when the signal is already aborted", async () => {
+    const client = new UndiciApiClient({ baseUrl, retries: 0 })
+    const controller = new AbortController()
+    controller.abort()
+    const result = await client.get("/search?fixed=1", { query: { q: "\ud800" }, signal: controller.signal })
+    await client.close()
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.message).toBe("An Unknown Error Occurred")
+      expect((result.error as Error).name).toBe("URIError")
+    }
+  })
+
+  it("should not parse application/json-seq bodies as JSON", async () => {
+    handler = (_req, res) => {
+      res.statusCode = 200
+      res.setHeader("content-type", "application/json-seq; charset=utf-8")
+      res.end('{"id":1}')
+    }
+    const client = new UndiciApiClient({ baseUrl, retries: 0 })
+    const result = await client.get("/stream")
+    await client.close()
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data).toBe('{"id":1}')
+    }
+  })
+
+  it("should return an error response for a body that can't be serialized", async () => {
+    const client = new UndiciApiClient({ baseUrl, retries: 0 })
+    const result = await client.post("/posts", { id: BigInt(1) })
+    await client.close()
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.message).toBe("An Unknown Error Occurred")
+      expect((result.error as Error).name).toBe("TypeError")
+    }
+    expect(requestLog).toHaveLength(0)
+  })
+
   it("should handle different HTTP status codes", async () => {
     const client = new UndiciApiClient({ baseUrl, retries: 0 })
 
@@ -476,5 +533,165 @@ describe("Undici API Client Edge Cases", () => {
     await client.close()
     expect(requestLog[0].headers["content-type"]).toBe("text/plain")
     expect(requestLog[0].body).toBe("plain text")
+  })
+})
+
+describe("Undici API Client Retry Methods", () => {
+  it("should not retry POST requests on 5xx errors", async () => {
+    let count = 0
+    handler = (_req, res) => {
+      count += 1
+      res.statusCode = 500
+      res.end()
+    }
+    const client = new UndiciApiClient({ baseUrl, retries: 3 })
+    const result = await client.post("/orders", { id: 1 })
+    await client.close()
+    expect(result.success).toBe(false)
+    expect(count).toBe(1)
+  })
+
+  it("should not retry PATCH requests on 429 errors", async () => {
+    let count = 0
+    handler = (_req, res) => {
+      count += 1
+      res.statusCode = 429
+      res.end()
+    }
+    const client = new UndiciApiClient({ baseUrl, retries: 3 })
+    const result = await client.patch("/orders/1", { status: "shipped" })
+    await client.close()
+    expect(result.success).toBe(false)
+    expect(count).toBe(1)
+  })
+
+  it("should retry PUT requests on 5xx errors", async () => {
+    let count = 0
+    handler = (_req, res) => {
+      count += 1
+      res.statusCode = 503
+      res.end()
+    }
+    const client = new UndiciApiClient({ baseUrl, retries: 2 })
+    const result = await client.put("/orders/1", { status: "shipped" })
+    await client.close()
+    expect(result.success).toBe(false)
+    expect(count).toBe(3)
+  })
+
+  it("should retry POST and PATCH requests on connection errors", async () => {
+    let count = 0
+    handler = (req) => {
+      count += 1
+      req.socket.destroy()
+    }
+    const client = new UndiciApiClient({ baseUrl, retries: 2 })
+    const post = await client.post("/orders", { id: 1 })
+    expect(post.success).toBe(false)
+    expect(count).toBe(3)
+
+    count = 0
+    const patch = await client.patch("/orders/1", { status: "shipped" })
+    await client.close()
+    expect(patch.success).toBe(false)
+    expect(count).toBe(3)
+  })
+
+  it("should not retry requests that time out", async () => {
+    let count = 0
+    handler = async (_req, res) => {
+      count += 1
+      await new Promise((resolve) => setTimeout(resolve, 400))
+      res.statusCode = 200
+      res.end()
+    }
+    const client = new UndiciApiClient({ baseUrl, retries: 2, timeout: 100 })
+    const get = await client.get("/slow")
+    const post = await client.post("/slow", { id: 1 })
+    await client.close()
+    expect(get.success).toBe(false)
+    expect(post.success).toBe(false)
+    expect(count).toBe(2)
+  })
+})
+
+describe("Undici API Client Request Options", () => {
+  it("should allow a request timeout longer than the client timeout", async () => {
+    handler = async (_req, res) => {
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      res.statusCode = 200
+      res.end("done")
+    }
+    const client = new UndiciApiClient({ baseUrl, retries: 0, timeout: 500 })
+    const result = await client.get("/slow", { timeout: 5000 })
+    await client.close()
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data).toBe("done")
+    }
+  })
+
+  it("should time out when the request timeout is shorter than the response", async () => {
+    handler = async (_req, res) => {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      res.statusCode = 200
+      res.end()
+    }
+    const client = new UndiciApiClient({ baseUrl, retries: 0, timeout: 2000 })
+    const result = await client.get("/slow", { timeout: 50 })
+    await client.close()
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.message).toBe("Network Error")
+    }
+  })
+
+  it("should merge the query option into a path that already has a query string", async () => {
+    const client = new UndiciApiClient({ baseUrl, retries: 0 })
+    const result = await client.get("/search?a=1", { query: { b: 2, tags: ["x", "y"] } })
+    await client.close()
+    expect(result.success).toBe(true)
+    expect(requestLog[0].url).toBe("/search?a=1&b=2&tags=x&tags=y")
+  })
+
+  it("should merge the query option ahead of a fragment", async () => {
+    const client = new UndiciApiClient({ baseUrl, retries: 0 })
+    expect((await client.get("/page#section", { query: { a: 1 } })).success).toBe(true)
+    expect((await client.get("/page?x=1#section", { query: { a: 1 } })).success).toBe(true)
+    await client.close()
+    expect(requestLog.map((entry) => entry.url)).toEqual(["/page?a=1#section", "/page?x=1&a=1#section"])
+  })
+
+  it("should map aborts with a custom reason to network errors", async () => {
+    handler = async (_req, res) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      res.statusCode = 200
+      res.end()
+    }
+    const client = new UndiciApiClient({ baseUrl, retries: 0 })
+    const controller = new AbortController()
+    setTimeout(() => controller.abort("user cancelled"), 50)
+    const result = await client.get("/posts/1", { signal: controller.signal })
+    await client.close()
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.message).toBe("Network Error")
+    }
+  })
+
+  it("should parse +json content types", async () => {
+    handler = (_req, res) => {
+      res.statusCode = 422
+      res.setHeader("content-type", "application/problem+json")
+      res.end(JSON.stringify({ message: "Email taken" }))
+    }
+    const client = new UndiciApiClient({ baseUrl, retries: 0 })
+    const result = await client.post("/users", { email: "a@b.c" })
+    await client.close()
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.data).toEqual({ message: "Email taken" })
+      expect(result.message).toBe("Email taken")
+    }
   })
 })

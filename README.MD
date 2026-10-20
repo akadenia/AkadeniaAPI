@@ -339,7 +339,9 @@ if (response.success) {
 
 ### 6. Retry Logic Configuration
 
-Failed requests are retried on network errors such as `ECONNRESET`, `ECONNREFUSED` and socket or header timeouts, for every HTTP method.
+Connection failures such as `ECONNRESET`, `ECONNREFUSED` and closed sockets are retried for every HTTP method.
+
+Timeouts are not retried, for any method. When `timeout` runs out the request is aborted and returns a `"Network Error"` response. Retrying it could repeat a `POST` or `PATCH` that the server already received.
 
 Responses with status `429`, `500`, `502`, `503` or `504` are retried only for `GET`, `HEAD`, `OPTIONS`, `PUT` and `DELETE`. `POST` and `PATCH` are not retried on these statuses, because the server may already have acted on the request. Other status codes are returned immediately.
 
@@ -898,7 +900,9 @@ type AkadeniaApiResponse<T = unknown> = AkadeniaApiSuccessResponse<T> | Akadenia
 | `AxiosApiClient` | `UndiciApiClient` |
 |---|---|
 | `baseUrl` could include a path | `baseUrl` must be an origin; move the path into each request |
-| `params` request option | `query` request option; if the path already has a query string, `query` is appended to it |
+| `params` request option | `query` request option; if the path already has a query string, `query` is appended to it, ahead of any `#fragment` |
+| `params` encoded arrays as `tags[]=x&tags[]=y` and spaces as `+` | `query` encodes arrays as `tags=x&tags=y` and spaces as `%20` |
+| Followed up to 21 redirects | Redirects are not followed; a `3xx` is returned as a success response with that status and body |
 | Any axios request option | Only `headers`, `query`, `timeout` and `signal` |
 | `responseType` (`blob`, `arraybuffer`, `stream`) | JSON or text only; use `getDispatcher()` for binary or streamed responses |
 | `FormData` bodies | Not serialized; send strings or binary data, or use `getDispatcher()` |
@@ -907,7 +911,7 @@ type AkadeniaApiResponse<T = unknown> = AkadeniaApiSuccessResponse<T> | Akadenia
 | `onRequest(config)` with an axios config | `onRequest(request)` with `url`, `method`, `headers`, `body`, `query` |
 | `onRetry(retryCount, axiosError, axiosConfig)` | `onRetry(retryCount, error, request)` |
 | Success response had `config` and `request` | Success response has `data`, `status`, `statusText`, `headers` |
-| Retried network errors for all methods, and `5xx` for idempotent methods | Same, and also retries `429` for idempotent methods; only `500`, `502`, `503` and `504` count as retryable `5xx` |
+| Retried connection errors for all methods, and `429` and every `5xx` (`500`–`599`) for idempotent methods. Did not retry timeouts | Retries connection errors for all methods, and `429` for idempotent methods. Only `500`, `502`, `503` and `504` are retried among `5xx`; `501` and `505`–`599` are returned immediately. Does not retry timeouts |
 | `AxiosError` type export | Removed |
 | Nothing to clean up | Call `close()` when done |
 

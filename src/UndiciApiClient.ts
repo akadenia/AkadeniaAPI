@@ -72,6 +72,15 @@ const isNetworkError = (error: unknown): boolean => {
   return false
 }
 
+// URIError from encoding the query, TypeError from JSON.stringify (BigInt, circular). Undici's own
+// errors carry a code, so a TypeError with one is not a serialization failure. Matched by name, since
+// errors from Node built-ins can come from another realm and fail instanceof.
+const isSerializationError = (error: unknown): boolean => {
+  if (!error || typeof error !== "object") return false
+  const { name, code } = error as { name?: string; code?: unknown }
+  return name === "URIError" || (name === "TypeError" && code === undefined)
+}
+
 class UndiciApiClient {
   private pool: Pool
   private dispatcher: Dispatcher
@@ -123,8 +132,6 @@ class UndiciApiClient {
           "EHOSTUNREACH",
           "EPIPE",
           "UND_ERR_SOCKET",
-          "UND_ERR_HEADERS_TIMEOUT",
-          "UND_ERR_BODY_TIMEOUT",
         ],
       }
 
@@ -254,7 +261,7 @@ class UndiciApiClient {
   private async parseResponseBody(body: Dispatcher.ResponseData["body"], contentType: string | undefined): Promise<unknown> {
     const text = await body.text()
     if (text.length === 0) return ""
-    if (contentType && /^application\/([\w.-]+\+)?json\b/.test(contentType.toLowerCase())) {
+    if (contentType && /^application\/([\w.-]+\+)?json(?=\s*(;|$))/.test(contentType.toLowerCase())) {
       try {
         return JSON.parse(text)
       } catch {
@@ -271,12 +278,19 @@ class UndiciApiClient {
   }
 
   private withQuery(url: string, query?: Record<string, unknown>): { path: string; query?: Record<string, unknown> } {
-    // undici rejects a query option when the path already has one, so merge them into the path instead
-    if (!query || !url.includes("?")) {
+    // undici rejects a query option when the path has a "?" or "#", so merge it into the path instead,
+    // ahead of any fragment
+    if (!query || !/[?#]/.test(url)) {
       return { path: url, query }
     }
     const extra = stringify(query as Parameters<typeof stringify>[0])
-    return { path: extra ? `${url}&${extra}` : url }
+    if (!extra) {
+      return { path: url }
+    }
+    const hashIndex = url.indexOf("#")
+    const base = hashIndex === -1 ? url : url.slice(0, hashIndex)
+    const fragment = hashIndex === -1 ? "" : url.slice(hashIndex)
+    return { path: `${base}${base.includes("?") ? "&" : "?"}${extra}${fragment}` }
   }
 
   private async runRequest<T>(
@@ -376,7 +390,9 @@ class UndiciApiClient {
       }
       return successResponse
     } catch (error) {
-      if (controller.signal.aborted || isNetworkError(error)) {
+      // Serialization failures are checked before the abort state: an already-aborted caller signal
+      // must not turn them into a network error that callers would retry.
+      if (!isSerializationError(error) && (controller.signal.aborted || isNetworkError(error))) {
         return {
           success: false,
           message: ApiResponseMessage.NetworkError,

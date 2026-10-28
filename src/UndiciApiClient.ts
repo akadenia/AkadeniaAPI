@@ -1,3 +1,4 @@
+import { stringify } from "node:querystring"
 import { Dispatcher, Pool, RetryAgent, RetryHandler, errors as UndiciErrors } from "undici"
 
 import { HeadersType, Headers } from "./headers"
@@ -5,6 +6,9 @@ import { ApiResponseMessage } from "./enums"
 import { AkadeniaApiSuccessResponse, AkadeniaApiErrorResponse, AkadeniaApiResponse } from "./types"
 
 type UndiciHttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS"
+
+// Error statuses are only retried for these methods, so a POST or PATCH that fails after the server acted on it isn't repeated
+const IDEMPOTENT_METHODS: string[] = ["GET", "HEAD", "OPTIONS", "PUT", "DELETE"]
 
 export type UndiciRequestConfig = {
   headers?: HeadersType
@@ -68,6 +72,15 @@ const isNetworkError = (error: unknown): boolean => {
   return false
 }
 
+// URIError from encoding the query, TypeError from JSON.stringify (BigInt, circular). Undici's own
+// errors carry a code, so a TypeError with one is not a serialization failure. Matched by name, since
+// errors from Node built-ins can come from another realm and fail instanceof.
+const isSerializationError = (error: unknown): boolean => {
+  if (!error || typeof error !== "object") return false
+  const { name, code } = error as { name?: string; code?: unknown }
+  return name === "URIError" || (name === "TypeError" && code === undefined)
+}
+
 class UndiciApiClient {
   private pool: Pool
   private dispatcher: Dispatcher
@@ -119,8 +132,6 @@ class UndiciApiClient {
           "EHOSTUNREACH",
           "EPIPE",
           "UND_ERR_SOCKET",
-          "UND_ERR_HEADERS_TIMEOUT",
-          "UND_ERR_BODY_TIMEOUT",
         ],
       }
 
@@ -129,6 +140,10 @@ class UndiciApiClient {
         const { statusCode, code } = err as Error & { statusCode?: number; code?: string }
 
         if (statusCode != null && retryOptions.statusCodes && !retryOptions.statusCodes.includes(statusCode)) {
+          callback(err)
+          return
+        }
+        if (statusCode != null && !IDEMPOTENT_METHODS.includes(String(context.opts.method).toUpperCase())) {
           callback(err)
           return
         }
@@ -246,7 +261,7 @@ class UndiciApiClient {
   private async parseResponseBody(body: Dispatcher.ResponseData["body"], contentType: string | undefined): Promise<unknown> {
     const text = await body.text()
     if (text.length === 0) return ""
-    if (contentType && contentType.toLowerCase().includes("application/json")) {
+    if (contentType && /^application\/([\w.-]+\+)?json(?=\s*(;|$))/.test(contentType.toLowerCase())) {
       try {
         return JSON.parse(text)
       } catch {
@@ -260,6 +275,22 @@ class UndiciApiClient {
     const value = headers["content-type"]
     if (Array.isArray(value)) return value[0]
     return value
+  }
+
+  private withQuery(url: string, query?: Record<string, unknown>): { path: string; query?: Record<string, unknown> } {
+    // undici rejects a query option when the path has a "?" or "#", so merge it into the path instead,
+    // ahead of any fragment
+    if (!query || !/[?#]/.test(url)) {
+      return { path: url, query }
+    }
+    const extra = stringify(query as Parameters<typeof stringify>[0])
+    if (!extra) {
+      return { path: url }
+    }
+    const hashIndex = url.indexOf("#")
+    const base = hashIndex === -1 ? url : url.slice(0, hashIndex)
+    const fragment = hashIndex === -1 ? "" : url.slice(hashIndex)
+    return { path: `${base}${base.includes("?") ? "&" : "?"}${extra}${fragment}` }
   }
 
   private async runRequest<T>(
@@ -299,8 +330,6 @@ class UndiciApiClient {
       }
     }
 
-    const { body: serializedBody, headers: finalHeaders } = this.serializeBody(context.body, context.headers)
-
     const controller = new AbortController()
     const externalSignal = config?.signal
     const onExternalAbort = () => controller.abort((externalSignal as AbortSignal).reason)
@@ -315,14 +344,22 @@ class UndiciApiClient {
     const timeoutTimer = setTimeout(() => controller.abort(), timeoutMs)
 
     try {
+      // Serialization can throw (a lone surrogate in the query, a BigInt or
+      // circular body), so it runs inside the try: the caller gets the error
+      // response and the timeout and abort listener are always cleaned up.
+      const { body: serializedBody, headers: finalHeaders } = this.serializeBody(context.body, context.headers)
+      const { path, query } = this.withQuery(context.url, context.query)
+
       const response = await this.dispatcher.request({
         origin: this.baseUrl,
-        path: context.url,
+        path,
         method: context.method,
         headers: this.toUndiciHeaders(finalHeaders),
         body: serializedBody,
-        query: context.query,
+        query,
         signal: controller.signal,
+        headersTimeout: timeoutMs,
+        bodyTimeout: timeoutMs,
       })
 
       const contentType = this.getContentType(response.headers)
@@ -353,7 +390,9 @@ class UndiciApiClient {
       }
       return successResponse
     } catch (error) {
-      if (isNetworkError(error)) {
+      // Serialization failures are checked before the abort state: an already-aborted caller signal
+      // must not turn them into a network error that callers would retry.
+      if (!isSerializationError(error) && (controller.signal.aborted || isNetworkError(error))) {
         return {
           success: false,
           message: ApiResponseMessage.NetworkError,

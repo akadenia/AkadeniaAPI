@@ -1,12 +1,8 @@
-import { AxiosResponse, AxiosError } from "axios"
-
 export type AkadeniaApiSuccessResponse<T = unknown> = {
   data: T
   status: number
   statusText: string
   headers: any
-  config?: any
-  request?: any
   success: true
   message?: string
 }

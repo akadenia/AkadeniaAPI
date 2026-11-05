@@ -36,7 +36,7 @@ jobs:
     steps:
       - checkout
       - node/install:
-          node-version: "22"
+          node-version: "26"
           install-pnpm: true
       - node/install-packages:
           pkg-manager: pnpm

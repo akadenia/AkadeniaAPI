@@ -1,3 +1,48 @@
+# [2.0.0](https://github.com/akadenia/AkadeniaAPI/compare/1.6.5...2.0.0) (2026-11-19)
+
+
+### Features
+
+* **api:** drop axios and AxiosApiClient ([#110](https://github.com/akadenia/AkadeniaAPI/issues/110)) ([fc8aa6b](https://github.com/akadenia/AkadeniaAPI/commit/fc8aa6bec60acbbc50d6ff1b5de27cb7d810287b))
+
+
+### BREAKING CHANGES
+
+* **api:** AxiosApiClient and the AxiosError type export are removed.
+Use UndiciApiClient instead; see "Migrating from AxiosApiClient" in the
+README for the differences.
+
+* fix(api): tighten UndiciApiClient retries, timeouts and query handling
+
+- Only retry 429/5xx responses for idempotent methods, so POST and PATCH
+  aren't repeated after the server may have acted on them
+- Apply the per-request timeout to undici's headers and body timeouts, so
+  it can be longer than the client timeout
+- Append the query option to paths that already have a query string
+  instead of failing
+- Report aborts with a custom reason as network errors
+- Parse +json content types such as application/problem+json
+- Remove the unused config and request fields from the success response type
+- Remove the duplicate License section from the README
+
+* fix(api): return an error response when the query or body can't be serialized
+
+Serialization ran before the try, so a lone surrogate in the query (or a
+BigInt or circular body) rejected the promise and left the timeout and
+the abort listener on the caller's signal behind.
+
+* fix(api): merge query ahead of a fragment, stop retrying timeouts, tighten JSON detection
+
+- Merge the query option into paths that contain a fragment, inserting it before the #.
+- Classify query and body serialization failures before the abort state, so an
+  already-aborted signal no longer reports them as network errors.
+- Drop UND_ERR_HEADERS_TIMEOUT and UND_ERR_BODY_TIMEOUT from the retryable codes;
+  the abort timer is what fires, and timeouts are not retried.
+- Only parse application/json and +json types, not application/json-seq.
+- Cover connection-error retries for POST and PATCH, and no retries on timeout.
+
+* docs(readme): correct retry, redirect and query encoding notes in the 2.0 migration guide
+
 ## [1.6.5](https://github.com/akadenia/AkadeniaAPI/compare/1.6.4...1.6.5) (2026-07-21)
 
 
